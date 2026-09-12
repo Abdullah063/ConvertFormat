@@ -7,6 +7,7 @@ import com.altun.convertformat.storage.FileStorageException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,6 +16,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,6 +31,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ConversionJobServiceTest {
+
+    @TempDir
+    private Path tempDirectory;
 
     @Mock
     private ConversionJobRepository conversionJobRepository;
@@ -129,6 +135,31 @@ class ConversionJobServiceTest {
         );
 
         assertEquals("Dönüşüm işlemi bulunamadı: " + id, exception.getMessage());
+    }
+
+    @Test
+    void loadsCompletedPdf() throws IOException {
+        UUID id = UUID.randomUUID();
+        ConversionJob job = new ConversionJob("my-document.docx", "source.docx");
+        job.complete("source.pdf");
+        Path pdf = Files.writeString(tempDirectory.resolve("source.pdf"), "pdf");
+        when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
+        when(fileStorage.load("source.pdf")).thenReturn(pdf);
+
+        ConversionFile result = conversionJobService.loadResult(id);
+
+        assertEquals(pdf, result.path());
+        assertEquals("my-document.pdf", result.downloadFileName());
+    }
+
+    @Test
+    void rejectsDownloadWhileConversionIsPending() {
+        UUID id = UUID.randomUUID();
+        ConversionJob job = new ConversionJob("example.docx", "source.docx");
+        when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
+
+        assertThrows(ConversionNotReadyException.class, () -> conversionJobService.loadResult(id));
+        verify(fileStorage, never()).load(any());
     }
 
     private MockMultipartFile docx(String fileName) {

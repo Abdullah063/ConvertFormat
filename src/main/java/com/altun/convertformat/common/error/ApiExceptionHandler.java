@@ -1,6 +1,7 @@
 package com.altun.convertformat.common.error;
 
 import com.altun.convertformat.conversion.ConversionJobNotFoundException;
+import com.altun.convertformat.conversion.ConversionNotReadyException;
 import com.altun.convertformat.storage.FileStorageException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,15 @@ public class ApiExceptionHandler {
             HttpServletRequest request
     ) {
         return response(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+    }
+
+    @ExceptionHandler(ConversionNotReadyException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiErrorResponse handleConversionNotReady(
+            ConversionNotReadyException exception,
+            HttpServletRequest request
+    ) {
+        return response(HttpStatus.CONFLICT, exception.getMessage(), request);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

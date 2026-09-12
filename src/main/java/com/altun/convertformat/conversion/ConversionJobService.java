@@ -11,6 +11,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.UUID;
 
 @Service
@@ -57,6 +59,26 @@ public class ConversionJobService {
                 .orElseThrow(() -> new ConversionJobNotFoundException(id));
     }
 
+    @Transactional(readOnly = true)
+    public ConversionFile loadResult(UUID id) {
+        ConversionJob conversionJob = findById(id);
+
+        if (conversionJob.getStatus() != ConversionStatus.COMPLETED
+                || conversionJob.getResultStorageKey() == null) {
+            throw new ConversionNotReadyException(id);
+        }
+
+        Path result = fileStorage.load(conversionJob.getResultStorageKey());
+        if (!Files.isRegularFile(result)) {
+            throw new FileStorageException("Dönüştürülen dosya bulunamadı");
+        }
+
+        return new ConversionFile(
+                result,
+                replaceExtension(conversionJob.getOriginalFileName(), ".pdf")
+        );
+    }
+
     private String store(MultipartFile file) {
         try {
             return fileStorage.store(file);
@@ -77,5 +99,11 @@ public class ConversionJobService {
         String cleanedPath = StringUtils.cleanPath(originalFileName);
         int lastSeparator = cleanedPath.lastIndexOf('/');
         return cleanedPath.substring(lastSeparator + 1);
+    }
+
+    private String replaceExtension(String fileName, String extension) {
+        int lastDot = fileName.lastIndexOf('.');
+        String baseName = lastDot < 0 ? fileName : fileName.substring(0, lastDot);
+        return baseName + extension;
     }
 }
