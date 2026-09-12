@@ -10,6 +10,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Service
 public class ConversionJobService {
@@ -42,6 +43,12 @@ public class ConversionJobService {
             deleteAfterFailedSave(storageKey, exception);
             throw exception;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public ConversionJob findById(UUID id) {
+        return conversionJobRepository.findById(id)
+                .orElseThrow(() -> new ConversionJobNotFoundException(id));
     }
 
     private String store(MultipartFile file) {

@@ -16,6 +16,7 @@ import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -67,6 +68,34 @@ class ConversionJobControllerTest {
         mockMvc.perform(multipart("/api/v1/conversions"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Dosya alanı zorunludur"));
+    }
+
+    @Test
+    void returnsJobStatusById() throws Exception {
+        UUID id = UUID.fromString("f89a019d-fce5-4b1f-8d63-d58fb3c79130");
+        ConversionJob conversionJob = new ConversionJob("example.docx", "source.docx");
+        ReflectionTestUtils.setField(conversionJob, "id", id);
+        when(conversionJobService.findById(id)).thenReturn(conversionJob);
+
+        mockMvc.perform(get("/api/v1/conversions/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(id.toString()))
+                .andExpect(jsonPath("$.originalFileName").value("example.docx"))
+                .andExpect(jsonPath("$.status").value("PENDING"));
+    }
+
+    @Test
+    void returnsNotFoundWhenJobDoesNotExist() throws Exception {
+        UUID id = UUID.fromString("f89a019d-fce5-4b1f-8d63-d58fb3c79130");
+        when(conversionJobService.findById(id))
+                .thenThrow(new ConversionJobNotFoundException(id));
+
+        mockMvc.perform(get("/api/v1/conversions/{id}", id))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message")
+                        .value("Dönüşüm işlemi bulunamadı: " + id))
+                .andExpect(jsonPath("$.path")
+                        .value("/api/v1/conversions/" + id));
     }
 
     private MockMultipartFile docx() {

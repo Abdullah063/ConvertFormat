@@ -10,7 +10,9 @@ public record ConversionJobResponseDto(
         UUID id,
         String originalFileName,
         ConversionStatus status,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime completedAt,
+        String errorMessage
 ) {
 
     public static ConversionJobResponseDto from(ConversionJob conversionJob) {
@@ -18,7 +20,9 @@ public record ConversionJobResponseDto(
                 conversionJob.getId(),
                 conversionJob.getOriginalFileName(),
                 conversionJob.getStatus(),
-                conversionJob.getCreatedAt()
+                conversionJob.getCreatedAt(),
+                conversionJob.getCompletedAt(),
+                conversionJob.getErrorMessage()
         );
     }
 }

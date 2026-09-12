@@ -14,6 +14,7 @@ public class SecurityConfiguration {
         http
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/api/v1/conversions").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/conversions/*").permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf

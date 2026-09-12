@@ -13,6 +13,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -91,6 +93,30 @@ class ConversionJobServiceTest {
         );
 
         verify(fileStorage).delete("generated.docx");
+    }
+
+    @Test
+    void returnsJobById() {
+        UUID id = UUID.randomUUID();
+        ConversionJob job = new ConversionJob("example.docx", "generated.docx");
+        when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
+
+        ConversionJob result = conversionJobService.findById(id);
+
+        assertEquals(job, result);
+    }
+
+    @Test
+    void throwsNotFoundWhenJobDoesNotExist() {
+        UUID id = UUID.randomUUID();
+        when(conversionJobRepository.findById(id)).thenReturn(Optional.empty());
+
+        ConversionJobNotFoundException exception = assertThrows(
+                ConversionJobNotFoundException.class,
+                () -> conversionJobService.findById(id)
+        );
+
+        assertEquals("Dönüşüm işlemi bulunamadı: " + id, exception.getMessage());
     }
 
     private MockMultipartFile docx(String fileName) {
