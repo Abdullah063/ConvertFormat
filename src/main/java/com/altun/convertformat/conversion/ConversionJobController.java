@@ -1,5 +1,6 @@
 package com.altun.convertformat.conversion;
 
+import com.altun.convertformat.conversion.dto.ConversionJobCreatedResponseDto;
 import com.altun.convertformat.conversion.dto.ConversionJobResponseDto;
 import com.altun.convertformat.entities.ConversionJob;
 import org.springframework.core.io.FileSystemResource;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -33,14 +35,14 @@ public class ConversionJobController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<ConversionJobResponseDto> create(
+    public ResponseEntity<ConversionJobCreatedResponseDto> create(
             @RequestPart("file") MultipartFile file
     ) {
-        ConversionJob conversionJob = conversionJobService.create(file);
-        ConversionJobResponseDto response = ConversionJobResponseDto.from(conversionJob);
+        ConversionJobCreation creation = conversionJobService.create(file);
+        ConversionJobCreatedResponseDto response = ConversionJobCreatedResponseDto.from(creation);
 
         return ResponseEntity.accepted()
-                .location(URI.create("/api/v1/conversions/" + conversionJob.getId()))
+                .location(URI.create("/api/v1/conversions/" + creation.job().getId()))
                 .body(response);
     }
 
@@ -50,8 +52,11 @@ public class ConversionJobController {
     }
 
     @GetMapping(value = "/{id}/file", produces = MediaType.APPLICATION_PDF_VALUE)
-    public ResponseEntity<Resource> download(@PathVariable UUID id) {
-        ConversionFile conversionFile = conversionJobService.loadResult(id);
+    public ResponseEntity<Resource> download(
+            @PathVariable UUID id,
+            @RequestHeader("X-Download-Token") String downloadToken
+    ) {
+        ConversionFile conversionFile = conversionJobService.loadResult(id, downloadToken);
         ContentDisposition contentDisposition = ContentDisposition.attachment()
                 .filename(conversionFile.downloadFileName(), StandardCharsets.UTF_8)
                 .build();

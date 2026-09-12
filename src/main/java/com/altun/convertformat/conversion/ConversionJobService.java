@@ -22,31 +22,40 @@ public class ConversionJobService {
     private final FileStorage fileStorage;
     private final DocxFileValidator docxFileValidator;
     private final ApplicationEventPublisher eventPublisher;
+    private final AccessTokenService accessTokenService;
 
     public ConversionJobService(
             ConversionJobRepository conversionJobRepository,
             FileStorage fileStorage,
             DocxFileValidator docxFileValidator,
-            ApplicationEventPublisher eventPublisher
+            ApplicationEventPublisher eventPublisher,
+            AccessTokenService accessTokenService
     ) {
         this.conversionJobRepository = conversionJobRepository;
         this.fileStorage = fileStorage;
         this.docxFileValidator = docxFileValidator;
         this.eventPublisher = eventPublisher;
+        this.accessTokenService = accessTokenService;
     }
 
     @Transactional
-    public ConversionJob create(MultipartFile file) {
+    public ConversionJobCreation create(MultipartFile file) {
         docxFileValidator.validate(file);
 
         String storageKey = store(file);
         String originalFileName = extractFileName(file.getOriginalFilename());
-        ConversionJob conversionJob = new ConversionJob(originalFileName, storageKey);
+        String downloadToken = accessTokenService.generate();
+        String accessTokenHash = accessTokenService.hash(downloadToken);
+        ConversionJob conversionJob = new ConversionJob(
+                originalFileName,
+                storageKey,
+                accessTokenHash
+        );
 
         try {
             ConversionJob savedJob = conversionJobRepository.saveAndFlush(conversionJob);
             eventPublisher.publishEvent(new ConversionJobCreatedEvent(savedJob.getId()));
-            return savedJob;
+            return new ConversionJobCreation(savedJob, downloadToken);
         } catch (RuntimeException exception) {
             deleteAfterFailedSave(storageKey, exception);
             throw exception;
@@ -60,8 +69,12 @@ public class ConversionJobService {
     }
 
     @Transactional(readOnly = true)
-    public ConversionFile loadResult(UUID id) {
+    public ConversionFile loadResult(UUID id, String downloadToken) {
         ConversionJob conversionJob = findById(id);
+
+        if (!accessTokenService.matches(downloadToken, conversionJob.getAccessTokenHash())) {
+            throw new InvalidAccessTokenException();
+        }
 
         if (conversionJob.getStatus() != ConversionStatus.COMPLETED
                 || conversionJob.getResultStorageKey() == null) {

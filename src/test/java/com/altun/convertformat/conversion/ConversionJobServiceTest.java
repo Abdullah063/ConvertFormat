@@ -47,6 +47,9 @@ class ConversionJobServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private AccessTokenService accessTokenService;
+
     private ConversionJobService conversionJobService;
 
     @BeforeEach
@@ -55,7 +58,8 @@ class ConversionJobServiceTest {
                 conversionJobRepository,
                 fileStorage,
                 docxFileValidator,
-                eventPublisher
+                eventPublisher,
+                accessTokenService
         );
     }
 
@@ -63,6 +67,8 @@ class ConversionJobServiceTest {
     void validatesStoresAndCreatesPendingJob() throws IOException {
         MockMultipartFile file = docx("folder/example.docx");
         when(fileStorage.store(file)).thenReturn("generated.docx");
+        when(accessTokenService.generate()).thenReturn("download-token");
+        when(accessTokenService.hash("download-token")).thenReturn("token-hash");
         UUID id = UUID.randomUUID();
         when(conversionJobRepository.saveAndFlush(any(ConversionJob.class)))
                 .thenAnswer(invocation -> {
@@ -71,11 +77,14 @@ class ConversionJobServiceTest {
                     return job;
                 });
 
-        ConversionJob result = conversionJobService.create(file);
+        ConversionJobCreation creation = conversionJobService.create(file);
+        ConversionJob result = creation.job();
 
         assertEquals("example.docx", result.getOriginalFileName());
         assertEquals("generated.docx", result.getSourceStorageKey());
         assertEquals(ConversionStatus.PENDING, result.getStatus());
+        assertEquals("download-token", creation.downloadToken());
+        assertEquals("token-hash", result.getAccessTokenHash());
 
         InOrder order = inOrder(docxFileValidator, fileStorage, conversionJobRepository);
         order.verify(docxFileValidator).validate(file);
@@ -116,7 +125,7 @@ class ConversionJobServiceTest {
     @Test
     void returnsJobById() {
         UUID id = UUID.randomUUID();
-        ConversionJob job = new ConversionJob("example.docx", "generated.docx");
+        ConversionJob job = new ConversionJob("example.docx", "generated.docx", "token-hash");
         when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
 
         ConversionJob result = conversionJobService.findById(id);
@@ -140,13 +149,14 @@ class ConversionJobServiceTest {
     @Test
     void loadsCompletedPdf() throws IOException {
         UUID id = UUID.randomUUID();
-        ConversionJob job = new ConversionJob("my-document.docx", "source.docx");
+        ConversionJob job = new ConversionJob("my-document.docx", "source.docx", "token-hash");
         job.complete("source.pdf");
         Path pdf = Files.writeString(tempDirectory.resolve("source.pdf"), "pdf");
         when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
+        when(accessTokenService.matches("download-token", "token-hash")).thenReturn(true);
         when(fileStorage.load("source.pdf")).thenReturn(pdf);
 
-        ConversionFile result = conversionJobService.loadResult(id);
+        ConversionFile result = conversionJobService.loadResult(id, "download-token");
 
         assertEquals(pdf, result.path());
         assertEquals("my-document.pdf", result.downloadFileName());
@@ -155,10 +165,28 @@ class ConversionJobServiceTest {
     @Test
     void rejectsDownloadWhileConversionIsPending() {
         UUID id = UUID.randomUUID();
-        ConversionJob job = new ConversionJob("example.docx", "source.docx");
+        ConversionJob job = new ConversionJob("example.docx", "source.docx", "token-hash");
         when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
+        when(accessTokenService.matches("download-token", "token-hash")).thenReturn(true);
 
-        assertThrows(ConversionNotReadyException.class, () -> conversionJobService.loadResult(id));
+        assertThrows(
+                ConversionNotReadyException.class,
+                () -> conversionJobService.loadResult(id, "download-token")
+        );
+        verify(fileStorage, never()).load(any());
+    }
+
+    @Test
+    void rejectsInvalidDownloadToken() {
+        UUID id = UUID.randomUUID();
+        ConversionJob job = new ConversionJob("example.docx", "source.docx", "token-hash");
+        when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
+        when(accessTokenService.matches("wrong-token", "token-hash")).thenReturn(false);
+
+        assertThrows(
+                InvalidAccessTokenException.class,
+                () -> conversionJobService.loadResult(id, "wrong-token")
+        );
         verify(fileStorage, never()).load(any());
     }
 

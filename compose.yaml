@@ -23,8 +23,6 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-convert_format}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-convert_format}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-local_password}
-      SPRING_SECURITY_USER_NAME: ${APP_USERNAME:-admin}
-      SPRING_SECURITY_USER_PASSWORD: ${APP_PASSWORD:-local_password}
       STORAGE_DIRECTORY: /app/storage
       LIBREOFFICE_COMMAND: libreoffice
     ports:

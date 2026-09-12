@@ -20,7 +20,6 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -45,9 +44,10 @@ class ConversionJobControllerTest {
     void acceptsDocxAndReturnsPendingJob() throws Exception {
         UUID id = UUID.fromString("f89a019d-fce5-4b1f-8d63-d58fb3c79130");
         MockMultipartFile file = docx();
-        ConversionJob conversionJob = new ConversionJob("example.docx", "source.docx");
+        ConversionJob conversionJob = new ConversionJob("example.docx", "source.docx", "token-hash");
         ReflectionTestUtils.setField(conversionJob, "id", id);
-        when(conversionJobService.create(file)).thenReturn(conversionJob);
+        when(conversionJobService.create(file))
+                .thenReturn(new ConversionJobCreation(conversionJob, "download-token"));
 
         mockMvc.perform(multipart("/api/v1/conversions").file(file))
                 .andExpect(status().isAccepted())
@@ -57,7 +57,8 @@ class ConversionJobControllerTest {
                 ))
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.originalFileName").value("example.docx"))
-                .andExpect(jsonPath("$.status").value("PENDING"));
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.downloadToken").value("download-token"));
     }
 
     @Test
@@ -83,7 +84,7 @@ class ConversionJobControllerTest {
     @Test
     void returnsJobStatusById() throws Exception {
         UUID id = UUID.fromString("f89a019d-fce5-4b1f-8d63-d58fb3c79130");
-        ConversionJob conversionJob = new ConversionJob("example.docx", "source.docx");
+        ConversionJob conversionJob = new ConversionJob("example.docx", "source.docx", "token-hash");
         ReflectionTestUtils.setField(conversionJob, "id", id);
         when(conversionJobService.findById(id)).thenReturn(conversionJob);
 
@@ -112,10 +113,11 @@ class ConversionJobControllerTest {
     void downloadsCompletedPdfForAuthenticatedUser() throws Exception {
         UUID id = UUID.fromString("f89a019d-fce5-4b1f-8d63-d58fb3c79130");
         Path pdf = Files.writeString(tempDirectory.resolve("result.pdf"), "pdf-content");
-        when(conversionJobService.loadResult(id))
+        when(conversionJobService.loadResult(id, "download-token"))
                 .thenReturn(new ConversionFile(pdf, "example.pdf"));
 
-        mockMvc.perform(get("/api/v1/conversions/{id}/file", id).with(user("test")))
+        mockMvc.perform(get("/api/v1/conversions/{id}/file", id)
+                        .header("X-Download-Token", "download-token"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(
                         "Content-Disposition",
@@ -126,20 +128,21 @@ class ConversionJobControllerTest {
     }
 
     @Test
-    void protectsPdfDownloadFromAnonymousUsers() throws Exception {
+    void requiresDownloadTokenHeader() throws Exception {
         UUID id = UUID.fromString("f89a019d-fce5-4b1f-8d63-d58fb3c79130");
 
         mockMvc.perform(get("/api/v1/conversions/{id}/file", id))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     void returnsConflictWhileConversionIsPending() throws Exception {
         UUID id = UUID.fromString("f89a019d-fce5-4b1f-8d63-d58fb3c79130");
-        when(conversionJobService.loadResult(id))
+        when(conversionJobService.loadResult(id, "download-token"))
                 .thenThrow(new ConversionNotReadyException(id));
 
-        mockMvc.perform(get("/api/v1/conversions/{id}/file", id).with(user("test")))
+        mockMvc.perform(get("/api/v1/conversions/{id}/file", id)
+                        .header("X-Download-Token", "download-token"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.message")
                         .value("Dönüşüm işlemi henüz tamamlanmadı: " + id));

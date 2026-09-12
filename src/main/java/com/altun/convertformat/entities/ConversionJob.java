@@ -23,6 +23,9 @@ public class ConversionJob {
     @Column(length = 255)
     private String resultStorageKey;
 
+    @Column(nullable = false, unique = true, length = 64)
+    private String accessTokenHash;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ConversionStatus status;
@@ -40,9 +43,14 @@ public class ConversionJob {
 
     }
 
-    public ConversionJob( String originalFileName,String sourceStorageKey){
+    public ConversionJob(
+            String originalFileName,
+            String sourceStorageKey,
+            String accessTokenHash
+    ) {
         this.originalFileName=originalFileName;
         this.sourceStorageKey=sourceStorageKey;
+        this.accessTokenHash=accessTokenHash;
         this.status=ConversionStatus.PENDING;
         this.createdAt=LocalDateTime.now();
 
@@ -84,6 +92,10 @@ public class ConversionJob {
 
     public String getResultStorageKey() {
         return resultStorageKey;
+    }
+
+    public String getAccessTokenHash() {
+        return accessTokenHash;
     }
 
     public String getErrorMessage() {

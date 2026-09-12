@@ -2,6 +2,7 @@ package com.altun.convertformat.common.error;
 
 import com.altun.convertformat.conversion.ConversionJobNotFoundException;
 import com.altun.convertformat.conversion.ConversionNotReadyException;
+import com.altun.convertformat.conversion.InvalidAccessTokenException;
 import com.altun.convertformat.storage.FileStorageException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -15,6 +16,15 @@ import java.time.Instant;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    @ExceptionHandler(InvalidAccessTokenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiErrorResponse handleInvalidAccessToken(
+            InvalidAccessTokenException exception,
+            HttpServletRequest request
+    ) {
+        return response(HttpStatus.FORBIDDEN, exception.getMessage(), request);
+    }
 
     @ExceptionHandler(ConversionJobNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)

@@ -38,7 +38,7 @@ class ConversionJobProcessorTest {
     @Test
     void marksJobCompletedAfterSuccessfulConversion() {
         UUID id = UUID.randomUUID();
-        ConversionJob job = new ConversionJob("example.docx", "source.docx");
+        ConversionJob job = new ConversionJob("example.docx", "source.docx", "token-hash");
         when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
         when(conversionJobRepository.saveAndFlush(job)).thenReturn(job);
         when(documentConverter.convertToPdf("source.docx")).thenReturn("source.pdf");
@@ -53,7 +53,7 @@ class ConversionJobProcessorTest {
     @Test
     void marksJobFailedWhenConversionFails() {
         UUID id = UUID.randomUUID();
-        ConversionJob job = new ConversionJob("example.docx", "source.docx");
+        ConversionJob job = new ConversionJob("example.docx", "source.docx", "token-hash");
         when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
         when(conversionJobRepository.saveAndFlush(job)).thenReturn(job);
         when(documentConverter.convertToPdf("source.docx"))
