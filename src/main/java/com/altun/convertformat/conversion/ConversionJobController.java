@@ -3,6 +3,8 @@ package com.altun.convertformat.conversion;
 import com.altun.convertformat.conversion.dto.ConversionJobCreatedResponseDto;
 import com.altun.convertformat.conversion.dto.ConversionJobResponseDto;
 import com.altun.convertformat.entities.ConversionJob;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
@@ -23,6 +25,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/conversions")
+@Tag(name = "Conversions", description = "DOCX → PDF dönüşüm işlemleri")
 public class ConversionJobController {
 
     private final ConversionJobService conversionJobService;
@@ -35,6 +38,7 @@ public class ConversionJobController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
+    @Operation(summary = "Yeni bir DOCX → PDF dönüşümü başlatır")
     public ResponseEntity<ConversionJobCreatedResponseDto> create(
             @RequestPart("file") MultipartFile file
     ) {
@@ -47,11 +51,13 @@ public class ConversionJobController {
     }
 
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Dönüşüm durumunu sorgular")
     public ConversionJobResponseDto findById(@PathVariable UUID id) {
         return ConversionJobResponseDto.from(conversionJobService.findById(id));
     }
 
     @GetMapping(value = "/{id}/file", produces = MediaType.APPLICATION_PDF_VALUE)
+    @Operation(summary = "Tamamlanan PDF dosyasını gizli anahtarla indirir")
     public ResponseEntity<Resource> download(
             @PathVariable UUID id,
             @RequestHeader("X-Download-Token") String downloadToken

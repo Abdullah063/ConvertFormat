@@ -2,7 +2,9 @@ package com.altun.convertformat.conversion;
 
 import com.altun.convertformat.common.error.ApiExceptionHandler;
 import com.altun.convertformat.common.config.SecurityConfiguration;
+import com.altun.convertformat.common.ratelimit.UploadRateLimiter;
 import com.altun.convertformat.entities.ConversionJob;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,15 @@ class ConversionJobControllerTest {
 
     @MockitoBean
     private ConversionJobService conversionJobService;
+
+    @MockitoBean
+    private UploadRateLimiter uploadRateLimiter;
+
+    @BeforeEach
+    void allowUploadRequests() {
+        when(uploadRateLimiter.tryAcquire(org.mockito.ArgumentMatchers.anyString()))
+                .thenReturn(true);
+    }
 
     @Test
     void acceptsDocxAndReturnsPendingJob() throws Exception {

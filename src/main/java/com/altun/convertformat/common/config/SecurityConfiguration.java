@@ -17,6 +17,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/v1/conversions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/conversions/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/conversions/*/file").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
+                        .permitAll()
                         .anyRequest().denyAll()
                 )
                 .csrf(csrf -> csrf
