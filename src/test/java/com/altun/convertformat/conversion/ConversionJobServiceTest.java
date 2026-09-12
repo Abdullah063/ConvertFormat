@@ -11,6 +11,8 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -36,6 +38,9 @@ class ConversionJobServiceTest {
     @Mock
     private DocxFileValidator docxFileValidator;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private ConversionJobService conversionJobService;
 
     @BeforeEach
@@ -43,7 +48,8 @@ class ConversionJobServiceTest {
         conversionJobService = new ConversionJobService(
                 conversionJobRepository,
                 fileStorage,
-                docxFileValidator
+                docxFileValidator,
+                eventPublisher
         );
     }
 
@@ -51,8 +57,13 @@ class ConversionJobServiceTest {
     void validatesStoresAndCreatesPendingJob() throws IOException {
         MockMultipartFile file = docx("folder/example.docx");
         when(fileStorage.store(file)).thenReturn("generated.docx");
+        UUID id = UUID.randomUUID();
         when(conversionJobRepository.saveAndFlush(any(ConversionJob.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenAnswer(invocation -> {
+                    ConversionJob job = invocation.getArgument(0);
+                    ReflectionTestUtils.setField(job, "id", id);
+                    return job;
+                });
 
         ConversionJob result = conversionJobService.create(file);
 
@@ -64,6 +75,7 @@ class ConversionJobServiceTest {
         order.verify(docxFileValidator).validate(file);
         order.verify(fileStorage).store(file);
         order.verify(conversionJobRepository).saveAndFlush(any(ConversionJob.class));
+        verify(eventPublisher).publishEvent(new ConversionJobCreatedEvent(id));
     }
 
     @Test

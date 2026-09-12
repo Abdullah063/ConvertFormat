@@ -5,6 +5,7 @@ import com.altun.convertformat.repositories.ConversionJobRepository;
 import com.altun.convertformat.storage.FileStorage;
 import com.altun.convertformat.storage.FileStorageException;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,15 +19,18 @@ public class ConversionJobService {
     private final ConversionJobRepository conversionJobRepository;
     private final FileStorage fileStorage;
     private final DocxFileValidator docxFileValidator;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ConversionJobService(
             ConversionJobRepository conversionJobRepository,
             FileStorage fileStorage,
-            DocxFileValidator docxFileValidator
+            DocxFileValidator docxFileValidator,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.conversionJobRepository = conversionJobRepository;
         this.fileStorage = fileStorage;
         this.docxFileValidator = docxFileValidator;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -38,7 +42,9 @@ public class ConversionJobService {
         ConversionJob conversionJob = new ConversionJob(originalFileName, storageKey);
 
         try {
-            return conversionJobRepository.saveAndFlush(conversionJob);
+            ConversionJob savedJob = conversionJobRepository.saveAndFlush(conversionJob);
+            eventPublisher.publishEvent(new ConversionJobCreatedEvent(savedJob.getId()));
+            return savedJob;
         } catch (RuntimeException exception) {
             deleteAfterFailedSave(storageKey, exception);
             throw exception;
