@@ -2,9 +2,9 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: convert_format
-      POSTGRES_USER: convert_format
-      POSTGRES_PASSWORD: local_password
+      POSTGRES_DB: ${POSTGRES_DB:-convert_format}
+      POSTGRES_USER: ${POSTGRES_USER:-convert_format}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local_password}
     ports:
       - "127.0.0.1:5434:5432"
     volumes:
@@ -16,5 +16,32 @@ services:
       retries: 10
     restart: unless-stopped
 
+  app:
+    build:
+      context: .
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-convert_format}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-convert_format}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-local_password}
+      SPRING_SECURITY_USER_NAME: ${APP_USERNAME:-admin}
+      SPRING_SECURITY_USER_PASSWORD: ${APP_PASSWORD:-local_password}
+      STORAGE_DIRECTORY: /app/storage
+      LIBREOFFICE_COMMAND: libreoffice
+    ports:
+      - "127.0.0.1:8081:8081"
+    volumes:
+      - storage_data:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  storage_data:
