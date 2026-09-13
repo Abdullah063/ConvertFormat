@@ -14,10 +14,14 @@ public class SecurityConfiguration {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers("/", "/index.html", "/css/**", "/js/**", "/favicon.ico")
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/conversions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/conversions/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/conversions/*/file").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**")
                         .permitAll()
                         .anyRequest().denyAll()
                 )

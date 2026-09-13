@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="DOCX belgelerinizi güvenli biçimde PDF'e dönüştürün.">
+    <title>ConvertFormat — DOCX'ten PDF'e</title>
+    <link rel="stylesheet" href="/css/app.css">
+    <script src="/js/app.js" defer></script>
+</head>
+<body>
+<header class="site-header">
+    <a class="brand" href="/" aria-label="ConvertFormat ana sayfa">
+        <span class="brand-mark">CF</span>
+        <span>ConvertFormat</span>
+    </a>
+    <a class="api-link" href="/swagger-ui.html">API Dokümanı</a>
+</header>
+
+<main>
+    <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">Hızlı · Güvenli · Ücretsiz</p>
+        <h1 id="page-title">DOCX belgeni saniyeler içinde PDF’e dönüştür.</h1>
+        <p class="hero-copy">Dosyanı seç, dönüşümü biz yapalım. Belgen yalnızca sana verilen gizli anahtarla indirilebilir.</p>
+    </section>
+
+    <section class="converter-card" aria-label="Dosya dönüştürücü">
+        <form id="upload-form">
+            <label class="drop-zone" id="drop-zone" for="file-input">
+                <input id="file-input" name="file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+                <span class="upload-icon" aria-hidden="true">↑</span>
+                <strong>DOCX dosyanı buraya bırak</strong>
+                <span>veya bilgisayarından seç</span>
+                <span class="file-limit">En fazla 10 MB</span>
+            </label>
+
+            <div class="selected-file" id="selected-file" hidden>
+                <div>
+                    <strong id="file-name"></strong>
+                    <span id="file-size"></span>
+                </div>
+                <button class="text-button" id="remove-file" type="button">Kaldır</button>
+            </div>
+
+            <button class="primary-button" id="submit-button" type="submit" disabled>
+                PDF’e dönüştür
+            </button>
+        </form>
+
+        <div class="result-panel" id="result-panel" aria-live="polite" hidden>
+            <div class="status-indicator" id="status-indicator" aria-hidden="true"></div>
+            <div class="result-copy">
+                <strong id="result-title">Dosyan hazırlanıyor</strong>
+                <span id="result-message">Dönüşüm birkaç saniye sürebilir.</span>
+            </div>
+            <button class="primary-button" id="download-button" type="button" hidden>PDF’i indir</button>
+            <button class="text-button" id="new-conversion" type="button" hidden>Yeni dosya dönüştür</button>
+        </div>
+
+        <p class="privacy-note"><span aria-hidden="true">◈</span> İndirme anahtarın tarayıcı sekmesi kapatılana kadar saklanır.</p>
+    </section>
+
+    <section class="feature-grid" aria-label="Özellikler">
+        <article>
+            <span>01</span>
+            <h2>Formatı korur</h2>
+            <p>LibreOffice motoru belge düzenini PDF’e aktarır.</p>
+        </article>
+        <article>
+            <span>02</span>
+            <h2>Özel indirme</h2>
+            <p>PDF yalnızca benzersiz indirme anahtarıyla alınabilir.</p>
+        </article>
+        <article>
+            <span>03</span>
+            <h2>Arka planda işler</h2>
+            <p>Uzun dönüşümlerde sayfa donmadan işlem durumunu izler.</p>
+        </article>
+    </section>
+</main>
+
+<footer>
+    <span>ConvertFormat</span>
+    <span>Spring Boot · PostgreSQL · LibreOffice</span>
+</footer>
+</body>
+</html>
