@@ -3,102 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="DOCX belgelerini PDF'e, JPEG ve PNG görsellerini WebP'ye dönüştürün.">
-    <title>ConvertFormat — Belge ve görsel dönüştürücü</title>
+    <meta name="description" content="DOCX, PDF, WebP, JPEG ve PNG dosyalarınızı güvenle dönüştürün.">
+    <title>ConvertFormat — Hızlı ve güvenli dosya dönüştürme</title>
     <link rel="stylesheet" href="/css/app.css">
     <script src="/js/app.js" defer></script>
 </head>
 <body>
 <header class="site-header">
     <a class="brand" href="/" aria-label="ConvertFormat ana sayfa">
-        <span class="brand-mark">CF</span>
-        <span>ConvertFormat</span>
+        <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M7 3.75h7.25L19 8.5v11.75H7zM14 3.75V8.5h5M4 7.75v12.5h11"/></svg>
+        </span>
+        <span>Convert<span>Format</span></span>
     </a>
-    <a class="api-link" href="/swagger-ui.html">API Dokümanı</a>
+    <nav aria-label="Ana navigasyon">
+        <a class="api-link" href="/swagger-ui.html">
+            <span>API Dokümanı</span>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 5 5 5-5 5"/></svg>
+        </a>
+    </nav>
 </header>
 
 <main>
-    <section class="hero" aria-labelledby="page-title">
-        <p class="eyebrow">Belge · Görsel · Güvenli</p>
-        <h1 id="page-title">Dosyanı ihtiyacın olan formata dönüştür.</h1>
-        <p class="hero-copy">Belgelerini ve görsellerini PDF, WebP, JPG veya PNG formatına çevir. Sonuç yalnızca sana verilen gizli anahtarla indirilebilir.</p>
-    </section>
+    <div class="workspace">
+        <section class="hero" aria-labelledby="page-title">
+            <div class="service-badge"><span aria-hidden="true"></span> Dönüştürme servisi hazır</div>
+            <h1 id="page-title">Dosyan hazır.<br><span>Formatı değil.</span></h1>
+            <p class="hero-copy">Belge ve görsellerini birkaç saniyede ihtiyacın olan formata dönüştür. Üyelik yok, karmaşa yok.</p>
 
-    <section class="converter-card" aria-label="Dosya dönüştürücü">
-        <form id="upload-form">
-            <div class="format-control">
-                <label for="conversion-mode">Dönüşüm türü</label>
-                <select id="conversion-mode" name="conversionMode">
-                    <option value="document">DOCX → PDF</option>
-                    <option value="imageToWebp">JPG / PNG → WebP</option>
-                    <option value="webpToJpeg">WebP → JPG</option>
-                    <option value="webpToPng">WebP → PNG</option>
-                    <option value="imageToPdf">JPG / PNG → PDF</option>
-                </select>
+            <div class="format-list" aria-label="Desteklenen formatlar">
+                <span>DOCX</span>
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12m-4-4 4 4-4 4"/></svg>
+                <span>PDF</span>
+                <span class="format-divider"></span>
+                <span>JPG</span>
+                <span>PNG</span>
+                <span>WebP</span>
             </div>
 
-            <label class="drop-zone" id="drop-zone" for="file-input">
-                <input id="file-input" name="file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
-                <span class="upload-icon" aria-hidden="true">↑</span>
-                <strong id="drop-title">DOCX dosyanı buraya bırak</strong>
-                <span>veya bilgisayarından seç</span>
-                <span class="file-limit">En fazla 10 MB</span>
-            </label>
+            <ul class="trust-list" aria-label="Hizmet özellikleri">
+                <li><span aria-hidden="true">✓</span> 10 MB’a kadar dosya</li>
+                <li><span aria-hidden="true">✓</span> Gizli anahtarla indirme</li>
+                <li><span aria-hidden="true">✓</span> Gerçek format dönüşümü</li>
+            </ul>
+        </section>
 
-            <div class="selected-file" id="selected-file" hidden>
+        <section class="converter-card" aria-label="Dosya dönüştürücü">
+            <div class="card-heading">
                 <div>
-                    <strong id="file-name"></strong>
-                    <span id="file-size"></span>
+                    <span class="section-label">Yeni dönüşüm</span>
+                    <h2>Dosyanı dönüştür</h2>
                 </div>
-                <button class="text-button" id="remove-file" type="button">Kaldır</button>
+                <span class="secure-label">
+                    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.75 16 5v4.25c0 3.75-2.45 6.55-6 8-3.55-1.45-6-4.25-6-8V5zM7.5 10l1.6 1.6 3.4-3.4"/></svg>
+                    Güvenli
+                </span>
             </div>
 
-            <div class="quality-control" id="quality-control" hidden>
-                <label id="quality-label" for="quality">WebP kalitesi</label>
-                <input id="quality" name="quality" type="range" min="1" max="100" value="82">
-                <output id="quality-value" for="quality">82</output>
+            <form id="upload-form">
+                <div class="format-control">
+                    <label for="conversion-mode">Dönüşüm türü</label>
+                    <div class="select-wrap">
+                        <select id="conversion-mode" name="conversionMode">
+                            <option value="document">DOCX → PDF</option>
+                            <option value="imageToWebp">JPG / PNG → WebP</option>
+                            <option value="webpToJpeg">WebP → JPG</option>
+                            <option value="webpToPng">WebP → PNG</option>
+                            <option value="imageToPdf">JPG / PNG → PDF</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label class="drop-zone" id="drop-zone" for="file-input">
+                    <input id="file-input" name="file" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required>
+                    <span class="upload-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4.25A1.75 1.75 0 0 0 6.75 20h10.5A1.75 1.75 0 0 0 19 18.25V14"/></svg>
+                    </span>
+                    <strong id="drop-title">DOCX dosyanı buraya bırak</strong>
+                    <span>Sürükle ve bırak veya <b>dosya seç</b></span>
+                    <span class="file-limit">En fazla 10 MB</span>
+                </label>
+
+                <div class="selected-file" id="selected-file" hidden>
+                    <span class="file-icon" aria-hidden="true">
+                        <svg viewBox="0 0 20 20"><path d="M5 2.75h6l4 4v10.5H5zM11 2.75v4h4"/></svg>
+                    </span>
+                    <div>
+                        <strong id="file-name"></strong>
+                        <span id="file-size"></span>
+                    </div>
+                    <button class="text-button" id="remove-file" type="button" aria-label="Seçili dosyayı kaldır">Kaldır</button>
+                </div>
+
+                <div class="quality-control" id="quality-control" hidden>
+                    <label id="quality-label" for="quality">WebP kalitesi</label>
+                    <input id="quality" name="quality" type="range" min="1" max="100" value="82">
+                    <output id="quality-value" for="quality">82</output>
+                </div>
+
+                <button class="primary-button" id="submit-button" type="submit" disabled>PDF’e dönüştür</button>
+            </form>
+
+            <div class="result-panel" id="result-panel" aria-live="polite" hidden>
+                <div class="status-indicator" id="status-indicator" aria-hidden="true"></div>
+                <div class="result-copy">
+                    <strong id="result-title">Dosyan hazırlanıyor</strong>
+                    <span id="result-message">Dönüşüm birkaç saniye sürebilir.</span>
+                </div>
+                <button class="primary-button" id="download-button" type="button" hidden>PDF’i indir</button>
+                <button class="text-button" id="new-conversion" type="button" hidden>Yeni dosya dönüştür</button>
             </div>
 
-            <button class="primary-button" id="submit-button" type="submit" disabled>
-                PDF’e dönüştür
-            </button>
-        </form>
-
-        <div class="result-panel" id="result-panel" aria-live="polite" hidden>
-            <div class="status-indicator" id="status-indicator" aria-hidden="true"></div>
-            <div class="result-copy">
-                <strong id="result-title">Dosyan hazırlanıyor</strong>
-                <span id="result-message">Dönüşüm birkaç saniye sürebilir.</span>
-            </div>
-            <button class="primary-button" id="download-button" type="button" hidden>PDF’i indir</button>
-            <button class="text-button" id="new-conversion" type="button" hidden>Yeni dosya dönüştür</button>
-        </div>
-
-        <p class="privacy-note"><span aria-hidden="true">◈</span> İndirme anahtarın tarayıcı sekmesi kapatılana kadar saklanır.</p>
-    </section>
+            <p class="privacy-note">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.75 16 5v4.25c0 3.75-2.45 6.55-6 8-3.55-1.45-6-4.25-6-8V5z"/></svg>
+                İndirme anahtarın yalnızca bu sekmede saklanır.
+            </p>
+        </section>
+    </div>
 
     <section class="feature-grid" aria-label="Özellikler">
         <article>
-            <span>01</span>
-            <h2>Gerçek dönüşüm</h2>
-            <p>LibreOffice, cwebp ve ImageMagick dosyanı gerçek hedef formatta üretir.</p>
+            <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M4 7.5h16M8 3.5 4 7.5l4 4M20 16.5H4m12 4 4-4-4-4"/></svg>
+            </span>
+            <div><h2>Gerçek dönüşüm</h2><p>Dosya uzantısı değil, içeriği gerçekten dönüştürülür.</p></div>
         </article>
         <article>
-            <span>02</span>
-            <h2>Özel indirme</h2>
-            <p>Sonuç yalnızca benzersiz indirme anahtarıyla alınabilir.</p>
+            <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3.5 19 6v5c0 4.25-2.85 7.55-7 9.5-4.15-1.95-7-5.25-7-9.5V6zM9 12l2 2 4-4"/></svg>
+            </span>
+            <div><h2>Kontrollü erişim</h2><p>Çıktını yalnızca sana verilen anahtarla indirebilirsin.</p></div>
         </article>
         <article>
-            <span>03</span>
-            <h2>Arka planda işler</h2>
-            <p>Uzun dönüşümlerde sayfa donmadan işlem durumunu izler.</p>
+            <span class="feature-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 7v5l3 2m6-2a9 9 0 1 1-18 0 9 9 0 0 1 18 0"/></svg>
+            </span>
+            <div><h2>Arka planda hızlı</h2><p>Dönüşüm sürerken sayfa donmaz, durum anlık izlenir.</p></div>
         </article>
     </section>
 </main>
 
 <footer>
-    <span>ConvertFormat</span>
-    <span>Spring Boot · PostgreSQL · LibreOffice · cwebp · ImageMagick</span>
+    <div class="footer-brand"><span>CF</span> ConvertFormat</div>
+    <span>Spring Boot ile geliştirildi</span>
 </footer>
 </body>
 </html>
