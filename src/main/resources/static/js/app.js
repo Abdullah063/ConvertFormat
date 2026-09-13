@@ -2,22 +2,63 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ACTIVE_JOB_KEY = "convertformat.activeJob";
 const MODES = {
     document: {
+        conversionType: "DOCX_TO_PDF",
         accept: ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         extensions: [".docx"],
+        invalidMessage: "Lütfen .docx uzantılı bir belge seç.",
         dropTitle: "DOCX dosyanı buraya bırak",
         submitTitle: "PDF’e dönüştür",
         outputExtension: ".pdf",
         readyTitle: "PDF’in hazır",
         downloadTitle: "PDF’i indir"
     },
-    image: {
+    imageToWebp: {
+        conversionType: "IMAGE_TO_WEBP",
         accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
         extensions: [".jpg", ".jpeg", ".png"],
+        invalidMessage: "Lütfen .jpg, .jpeg veya .png uzantılı bir görsel seç.",
         dropTitle: "JPEG veya PNG görselini buraya bırak",
         submitTitle: "WebP’ye dönüştür",
         outputExtension: ".webp",
         readyTitle: "WebP görselin hazır",
-        downloadTitle: "WebP’yi indir"
+        downloadTitle: "WebP’yi indir",
+        qualityLabel: "WebP kalitesi",
+        defaultQuality: 82
+    },
+    webpToJpeg: {
+        conversionType: "WEBP_TO_JPEG",
+        accept: ".webp,image/webp",
+        extensions: [".webp"],
+        invalidMessage: "Lütfen .webp uzantılı bir görsel seç.",
+        dropTitle: "WebP görselini buraya bırak",
+        submitTitle: "JPG’ye dönüştür",
+        outputExtension: ".jpg",
+        readyTitle: "JPG görselin hazır",
+        downloadTitle: "JPG’yi indir",
+        qualityLabel: "JPG kalitesi",
+        defaultQuality: 90
+    },
+    webpToPng: {
+        conversionType: "WEBP_TO_PNG",
+        accept: ".webp,image/webp",
+        extensions: [".webp"],
+        invalidMessage: "Lütfen .webp uzantılı bir görsel seç.",
+        dropTitle: "WebP görselini buraya bırak",
+        submitTitle: "PNG’ye dönüştür",
+        outputExtension: ".png",
+        readyTitle: "PNG görselin hazır",
+        downloadTitle: "PNG’yi indir"
+    },
+    imageToPdf: {
+        conversionType: "IMAGE_TO_PDF",
+        accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
+        extensions: [".jpg", ".jpeg", ".png"],
+        invalidMessage: "Lütfen .jpg, .jpeg veya .png uzantılı bir görsel seç.",
+        dropTitle: "JPEG veya PNG görselini buraya bırak",
+        submitTitle: "PDF’e dönüştür",
+        outputExtension: ".pdf",
+        readyTitle: "PDF’in hazır",
+        downloadTitle: "PDF’i indir"
     }
 };
 
@@ -29,11 +70,12 @@ const fileName = document.querySelector("#file-name");
 const fileSize = document.querySelector("#file-size");
 const removeFileButton = document.querySelector("#remove-file");
 const submitButton = document.querySelector("#submit-button");
-const modeButtons = document.querySelectorAll(".format-option");
+const modeSelect = document.querySelector("#conversion-mode");
 const dropTitle = document.querySelector("#drop-title");
 const qualityControl = document.querySelector("#quality-control");
 const qualityInput = document.querySelector("#quality");
 const qualityValue = document.querySelector("#quality-value");
+const qualityLabel = document.querySelector("#quality-label");
 const resultPanel = document.querySelector("#result-panel");
 const statusIndicator = document.querySelector("#status-indicator");
 const resultTitle = document.querySelector("#result-title");
@@ -47,11 +89,11 @@ let activeJob = restoreActiveJob();
 let activeMode = "document";
 
 fileInput.addEventListener("change", () => selectFile(fileInput.files[0]));
-modeButtons.forEach((button) => button.addEventListener("click", () => switchMode(button.dataset.mode)));
+modeSelect.addEventListener("change", () => switchMode(modeSelect.value));
 qualityInput.addEventListener("input", () => qualityValue.textContent = qualityInput.value);
 removeFileButton.addEventListener("click", resetSelection);
 newConversionButton.addEventListener("click", resetAll);
-downloadButton.addEventListener("click", downloadPdf);
+downloadButton.addEventListener("click", downloadResult);
 form.addEventListener("submit", startConversion);
 
 ["dragenter", "dragover"].forEach((eventName) => {
@@ -84,18 +126,13 @@ function selectFile(file) {
 
     if (!hasAllowedExtension) {
         resetSelection();
-        showError(
-            "Geçersiz dosya",
-            activeMode === "document"
-                ? "Lütfen .docx uzantılı bir belge seç."
-                : "Lütfen .jpg, .jpeg veya .png uzantılı bir görsel seç."
-        );
+        showError("Geçersiz dosya", mode.invalidMessage);
         return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
         resetSelection();
-        showError("Dosya çok büyük", "DOCX dosyası en fazla 10 MB olabilir.");
+        showError("Dosya çok büyük", "Dosya en fazla 10 MB olabilir.");
         return;
     }
 
@@ -113,16 +150,15 @@ function switchMode(modeName) {
     activeMode = modeName;
     const mode = MODES[activeMode];
 
-    modeButtons.forEach((button) => {
-        const isActive = button.dataset.mode === activeMode;
-        button.classList.toggle("is-active", isActive);
-        button.setAttribute("aria-selected", String(isActive));
-    });
-
     fileInput.accept = mode.accept;
     dropTitle.textContent = mode.dropTitle;
     submitButton.textContent = mode.submitTitle;
-    qualityControl.hidden = activeMode !== "image";
+    qualityControl.hidden = mode.defaultQuality === undefined;
+    if (mode.defaultQuality !== undefined) {
+        qualityInput.value = mode.defaultQuality;
+        qualityValue.textContent = mode.defaultQuality;
+        qualityLabel.textContent = mode.qualityLabel;
+    }
     resultPanel.hidden = true;
     resetSelection();
 }
@@ -152,7 +188,8 @@ async function startConversion(event) {
 
     const body = new FormData();
     body.append("file", selectedDocument);
-    if (activeMode === "image") {
+    body.append("conversionType", MODES[activeMode].conversionType);
+    if (MODES[activeMode].defaultQuality !== undefined) {
         body.append("quality", qualityInput.value);
     }
 
@@ -205,7 +242,7 @@ async function pollStatus() {
         }
 
         resultMessage.textContent = payload.status === "PROCESSING"
-            ? "Belge PDF formatına aktarılıyor…"
+            ? "Dosya hedef formata dönüştürülüyor…"
             : "Dönüşüm sırasına alındı…";
         pollingTimer = setTimeout(pollStatus, 1200);
     } catch (error) {
@@ -214,7 +251,7 @@ async function pollStatus() {
     }
 }
 
-async function downloadPdf() {
+async function downloadResult() {
     if (!activeJob) return;
 
     downloadButton.disabled = true;
@@ -227,7 +264,7 @@ async function downloadPdf() {
 
         if (!response.ok) {
             const payload = await readJson(response);
-            throw new Error(payload.message || "PDF indirilemedi.");
+            throw new Error(payload.message || "Dönüştürülen dosya indirilemedi.");
         }
 
         const blob = await response.blob();
@@ -243,9 +280,7 @@ async function downloadPdf() {
         resultMessage.textContent = error.message;
     } finally {
         downloadButton.disabled = false;
-        downloadButton.textContent = activeJob?.conversionType === "IMAGE_TO_WEBP"
-            ? MODES.image.downloadTitle
-            : MODES.document.downloadTitle;
+        downloadButton.textContent = modeForConversionType(activeJob?.conversionType).downloadTitle;
     }
 }
 
@@ -260,21 +295,24 @@ function showProcessing(title, message) {
 
 function showComplete() {
     statusIndicator.className = "status-indicator is-complete";
-    const isImage = activeJob.conversionType === "IMAGE_TO_WEBP";
-    resultTitle.textContent = isImage ? MODES.image.readyTitle : MODES.document.readyTitle;
+    const mode = modeForConversionType(activeJob.conversionType);
+    resultTitle.textContent = mode.readyTitle;
     resultMessage.textContent = outputFileName(activeJob);
-    downloadButton.textContent = isImage ? MODES.image.downloadTitle : MODES.document.downloadTitle;
+    downloadButton.textContent = mode.downloadTitle;
     downloadButton.hidden = false;
     newConversionButton.hidden = false;
 }
 
 function outputFileName(job) {
-    const extension = job.conversionType === "IMAGE_TO_WEBP"
-        ? MODES.image.outputExtension
-        : MODES.document.outputExtension;
+    const extension = modeForConversionType(job.conversionType).outputExtension;
     const lastDot = job.originalFileName.lastIndexOf(".");
     const baseName = lastDot < 0 ? job.originalFileName : job.originalFileName.slice(0, lastDot);
     return `${baseName}${extension}`;
+}
+
+function modeForConversionType(conversionType) {
+    return Object.values(MODES).find((mode) => mode.conversionType === conversionType)
+        || MODES.document;
 }
 
 function showError(title, message) {

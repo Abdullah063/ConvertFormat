@@ -1,16 +1,18 @@
 # ConvertFormat
 
-DOCX belgelerini PDF'e, JPEG ve PNG görsellerini WebP'ye dönüştüren Spring Boot uygulaması. Proje; dosya yükleme, asenkron işleme, durum sorgulama ve gizli anahtarla indirme akışını gerçek LibreOffice ve cwebp işlemleri üzerinden çalıştırır.
+DOCX belgelerini ve görselleri farklı formatlara dönüştüren Spring Boot uygulaması. Proje; dosya yükleme, asenkron işleme, durum sorgulama ve gizli anahtarla indirme akışını gerçek LibreOffice, cwebp ve ImageMagick işlemleri üzerinden çalıştırır.
 
 ## Özellikler
 
 - Mobil uyumlu belge ve görsel yükleme arayüzü
-- DOCX → PDF ve JPEG/PNG → WebP dönüşümü
-- WebP için 1–100 arası kalite seçimi
-- Dosya uzantısı yanında DOCX, JPEG ve PNG imza doğrulaması
+- DOCX → PDF
+- JPEG/PNG → WebP veya PDF
+- WebP → JPEG veya PNG
+- WebP ve JPEG çıktıları için 1–100 arası kalite seçimi
+- Dosya uzantısı yanında DOCX, JPEG, PNG ve WebP imza doğrulaması
 - En fazla 10 MB dosya doğrulaması
 - Asenkron dönüşüm ve iş durumu takibi
-- LibreOffice ile PDF, cwebp ile WebP üretimi
+- LibreOffice, cwebp ve ImageMagick ile gerçek format dönüşümü
 - SHA-256 özeti veritabanında tutulan tek kullanımlık erişim anahtarı
 - İstemci başına dakikada 10 yükleme sınırı
 - PostgreSQL ve Flyway şema yönetimi
@@ -20,11 +22,11 @@ DOCX belgelerini PDF'e, JPEG ve PNG görsellerini WebP'ye dönüştüren Spring 
 
 ## Çalışma akışı
 
-1. Tarayıcı `POST /api/v1/conversions` isteğiyle DOCX, JPEG veya PNG dosyasını gönderir.
+1. Tarayıcı `POST /api/v1/conversions` isteğiyle dosyayı ve hedef dönüşüm türünü gönderir.
 2. Uygulama dosyayı saklar, veritabanında `PENDING` işi oluşturur ve indirme anahtarını yalnızca bu yanıtta döndürür.
-3. Transaction tamamlandıktan sonra asenkron çalışan işlemci dönüşüm tipine uygun LibreOffice veya cwebp motorunu seçer.
+3. Transaction tamamlandıktan sonra asenkron çalışan işlemci dönüşüm tipine uygun LibreOffice, cwebp veya ImageMagick motorunu seçer.
 4. İş durumu `PROCESSING`, ardından `COMPLETED` veya `FAILED` olur.
-5. Tarayıcı durumu sorgular ve tamamlanan PDF'i `X-Download-Token` başlığıyla indirir.
+5. Tarayıcı durumu sorgular ve tamamlanan dosyayı `X-Download-Token` başlığıyla indirir.
 
 ## Teknolojiler
 
@@ -33,7 +35,7 @@ DOCX belgelerini PDF'e, JPEG ve PNG görsellerini WebP'ye dönüştüren Spring 
 - Spring Web MVC, Spring Data JPA, Spring Security
 - PostgreSQL 17
 - Flyway
-- LibreOffice ve libwebp/cwebp
+- LibreOffice, libwebp/cwebp ve ImageMagick
 - Springdoc OpenAPI
 - Docker ve Docker Compose
 
@@ -81,13 +83,32 @@ Görseli kalite değeriyle WebP'ye dönüştürme:
 ```bash
 curl \
   -F file=@gorsel.png \
+  -F conversionType=IMAGE_TO_WEBP \
   -F quality=82 \
   http://127.0.0.1:8081/api/v1/conversions
 ```
 
-`quality` değeri `1–100` arasındadır ve görseller için gönderilmezse `82` kullanılır. Dönüşüm türü dosya uzantısı ve dosya imzasından belirlenir.
+Diğer görsel dönüşümleri:
 
-Yanıttaki `id` iş durumunu sorgulamak, `downloadToken` ise PDF'i indirmek için kullanılır. Ham anahtar daha sonra sunucudan tekrar alınamaz.
+```bash
+# WebP → JPEG
+curl -F file=@gorsel.webp -F conversionType=WEBP_TO_JPEG -F quality=90 \
+  http://127.0.0.1:8081/api/v1/conversions
+
+# WebP → PNG
+curl -F file=@gorsel.webp -F conversionType=WEBP_TO_PNG \
+  http://127.0.0.1:8081/api/v1/conversions
+
+# JPEG veya PNG → PDF
+curl -F file=@gorsel.jpg -F conversionType=IMAGE_TO_PDF \
+  http://127.0.0.1:8081/api/v1/conversions
+```
+
+Desteklenen `conversionType` değerleri: `DOCX_TO_PDF`, `IMAGE_TO_WEBP`, `WEBP_TO_JPEG`, `WEBP_TO_PNG` ve `IMAGE_TO_PDF`.
+
+`quality` değeri `1–100` arasındadır. `IMAGE_TO_WEBP` için varsayılan `82`, `WEBP_TO_JPEG` için varsayılan `90` kullanılır. Arayüz dönüşüm türünü her zaman açıkça gönderir. Geriye dönük uyumluluk amacıyla tür gönderilmezse DOCX dosyası PDF'e, JPEG/PNG dosyası WebP'ye dönüştürülür; WebP dosyalarında hedef tür zorunludur.
+
+Yanıttaki `id` iş durumunu sorgulamak, `downloadToken` ise çıktıyı indirmek için kullanılır. Ham anahtar daha sonra sunucudan tekrar alınamaz.
 
 ```bash
 curl http://127.0.0.1:8081/api/v1/conversions/IS_ID
@@ -100,7 +121,7 @@ curl \
 
 ## Yerel geliştirme
 
-Uygulamayı Docker dışında çalıştıracaksan bilgisayarında Java 21, PostgreSQL, `libreoffice` ve `cwebp` komutları bulunmalıdır.
+Uygulamayı Docker dışında çalıştıracaksan bilgisayarında Java 21, PostgreSQL, `libreoffice`, `cwebp` ve WebP/PDF desteği bulunan `magick` komutları bulunmalıdır.
 
 ```bash
 docker compose up -d postgres
@@ -121,7 +142,7 @@ Veritabanı tabloları Hibernate tarafından otomatik değiştirilmez. Şema `sr
 - `server.forward-headers-strategy=framework`, reverse proxy arkasında istemci adresinin doğru okunmasını sağlar.
 - Yükleme limiti şu anda uygulama belleğindedir. Tek sunucuda uygundur; birden fazla uygulama kopyasında ortak limit için Redis gibi merkezi bir sistem kullanılmalıdır.
 - Yüklenen ve üretilen dosyalar Docker volume'unda kalıcıdır. Otomatik silme bilinçli olarak etkin değildir; üretimde saklama süresi belirlendikten sonra zamanlanmış temizlik eklenmelidir.
-- Kamuya açık dosya dönüştürücülerde antivirüs taraması, disk kotası ve LibreOffice işlemlerinin daha sıkı izole edilmesi sonraki güvenlik katmanlarıdır.
+- Kamuya açık dosya dönüştürücülerde antivirüs taraması, disk kotası ve dönüşüm işlemlerinin daha sıkı izole edilmesi sonraki güvenlik katmanlarıdır.
 
 ## Mülakat için önemli kararlar
 

@@ -26,6 +26,7 @@ services:
       STORAGE_DIRECTORY: /app/storage
       LIBREOFFICE_COMMAND: libreoffice
       CWEBP_COMMAND: cwebp
+      IMAGEMAGICK_COMMAND: magick
     ports:
       - "127.0.0.1:8081:8081"
     volumes:

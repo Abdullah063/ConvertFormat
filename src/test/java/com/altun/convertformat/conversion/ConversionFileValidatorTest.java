@@ -15,6 +15,7 @@ class ConversionFileValidatorTest {
     void acceptsDocxFile() {
         ValidatedUpload upload = validator.validate(
                 file("example.docx", bytes(0x50, 0x4b, 0x03, 0x04)),
+                null,
                 null
         );
 
@@ -27,6 +28,7 @@ class ConversionFileValidatorTest {
     void acceptsJpegWithRequestedQuality() {
         ValidatedUpload upload = validator.validate(
                 file("photo.jpeg", bytes(0xff, 0xd8, 0xff, 0xe0)),
+                ConversionType.IMAGE_TO_WEBP,
                 74
         );
 
@@ -39,6 +41,7 @@ class ConversionFileValidatorTest {
     void acceptsPngWithDefaultQuality() {
         ValidatedUpload upload = validator.validate(
                 file("image.png", bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)),
+                ConversionType.IMAGE_TO_WEBP,
                 null
         );
 
@@ -48,30 +51,75 @@ class ConversionFileValidatorTest {
     }
 
     @Test
+    void acceptsWebpToJpegWithDefaultQuality() {
+        ValidatedUpload upload = validator.validate(
+                file("image.webp", webpSignature()),
+                ConversionType.WEBP_TO_JPEG,
+                null
+        );
+
+        assertEquals(ConversionType.WEBP_TO_JPEG, upload.conversionType());
+        assertEquals(".webp", upload.sourceExtension());
+        assertEquals(90, upload.quality());
+    }
+
+    @Test
+    void acceptsWebpToPngWithoutQuality() {
+        ValidatedUpload upload = validator.validate(
+                file("image.webp", webpSignature()),
+                ConversionType.WEBP_TO_PNG,
+                40
+        );
+
+        assertEquals(ConversionType.WEBP_TO_PNG, upload.conversionType());
+        assertNull(upload.quality());
+    }
+
+    @Test
+    void acceptsJpegToPdfWithoutQuality() {
+        ValidatedUpload upload = validator.validate(
+                file("photo.jpg", bytes(0xff, 0xd8, 0xff)),
+                ConversionType.IMAGE_TO_PDF,
+                40
+        );
+
+        assertEquals(ConversionType.IMAGE_TO_PDF, upload.conversionType());
+        assertNull(upload.quality());
+    }
+
+    @Test
     void rejectsFileWhoseContentDoesNotMatchExtension() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> validator.validate(file("image.png", "not-a-png".getBytes()), 82)
+                () -> validator.validate(
+                        file("image.png", "not-a-png".getBytes()),
+                        ConversionType.IMAGE_TO_WEBP,
+                        82
+                )
         );
 
-        assertEquals("Geçersiz PNG dosyası", exception.getMessage());
+        assertEquals("Seçilen dönüşüm türü bu dosya ile uyumlu değil", exception.getMessage());
     }
 
     @Test
     void rejectsQualityOutsideAcceptedRange() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> validator.validate(file("photo.jpg", bytes(0xff, 0xd8, 0xff)), 101)
+                () -> validator.validate(
+                        file("photo.jpg", bytes(0xff, 0xd8, 0xff)),
+                        ConversionType.IMAGE_TO_WEBP,
+                        101
+                )
         );
 
-        assertEquals("WebP kalitesi 1 ile 100 arasında olmalıdır", exception.getMessage());
+        assertEquals("Görsel kalitesi 1 ile 100 arasında olmalıdır", exception.getMessage());
     }
 
     @Test
     void rejectsEmptyFile() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> validator.validate(file("example.docx", new byte[0]), null)
+                () -> validator.validate(file("example.docx", new byte[0]), null, null)
         );
 
         assertEquals("Dosya boş olamaz", exception.getMessage());
@@ -81,10 +129,13 @@ class ConversionFileValidatorTest {
     void rejectsUnsupportedExtension() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> validator.validate(file("example.pdf", "content".getBytes()), null)
+                () -> validator.validate(file("example.pdf", "content".getBytes()), null, null)
         );
 
-        assertEquals("Yalnızca DOCX, JPEG ve PNG dosyaları kabul edilir", exception.getMessage());
+        assertEquals(
+                "Dönüşüm türü belirtilmeli ve desteklenen bir dosya yüklenmelidir",
+                exception.getMessage()
+        );
     }
 
     @Test
@@ -93,7 +144,7 @@ class ConversionFileValidatorTest {
 
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
-                () -> validator.validate(file("example.docx", content), null)
+                () -> validator.validate(file("example.docx", content), null, null)
         );
 
         assertEquals("Dosya en fazla 10 MB olabilir", exception.getMessage());
@@ -109,5 +160,13 @@ class ConversionFileValidatorTest {
             result[index] = (byte) values[index];
         }
         return result;
+    }
+
+    private byte[] webpSignature() {
+        return bytes(
+                0x52, 0x49, 0x46, 0x46,
+                0x00, 0x00, 0x00, 0x00,
+                0x57, 0x45, 0x42, 0x50
+        );
     }
 }

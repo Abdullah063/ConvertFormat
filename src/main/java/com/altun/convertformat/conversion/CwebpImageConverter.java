@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -29,8 +30,8 @@ public class CwebpImageConverter implements ConversionEngine {
     }
 
     @Override
-    public ConversionType supportedType() {
-        return ConversionType.IMAGE_TO_WEBP;
+    public Set<ConversionType> supportedTypes() {
+        return Set.of(ConversionType.IMAGE_TO_WEBP);
     }
 
     @Override

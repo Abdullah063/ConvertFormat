@@ -29,15 +29,17 @@ public class ConversionJobProcessor {
         this.conversionJobRepository = conversionJobRepository;
         this.conversionEngines = new EnumMap<>(ConversionType.class);
         for (ConversionEngine conversionEngine : conversionEngines) {
-            ConversionEngine previous = this.conversionEngines.put(
-                    conversionEngine.supportedType(),
-                    conversionEngine
-            );
-            if (previous != null) {
-                throw new IllegalStateException(
-                        "Bir dönüşüm tipi için birden fazla motor tanımlandı: "
-                                + conversionEngine.supportedType()
+            for (ConversionType conversionType : conversionEngine.supportedTypes()) {
+                ConversionEngine previous = this.conversionEngines.put(
+                        conversionType,
+                        conversionEngine
                 );
+                if (previous != null) {
+                    throw new IllegalStateException(
+                            "Bir dönüşüm tipi için birden fazla motor tanımlandı: "
+                                    + conversionType
+                    );
+                }
             }
         }
     }

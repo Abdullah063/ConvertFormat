@@ -39,12 +39,17 @@ public class ConversionJobController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(summary = "Yeni bir DOCX → PDF veya JPEG/PNG → WebP dönüşümü başlatır")
+    @Operation(summary = "Desteklenen belge veya görsel dönüşümünü başlatır")
     public ResponseEntity<ConversionJobCreatedResponseDto> create(
             @RequestPart("file") MultipartFile file,
+            @RequestParam(required = false) ConversionType conversionType,
             @RequestParam(required = false) Integer quality
     ) {
-        ConversionJobCreation creation = conversionJobService.create(file, quality);
+        ConversionJobCreation creation = conversionJobService.create(
+                file,
+                conversionType,
+                quality
+        );
         ConversionJobCreatedResponseDto response = ConversionJobCreatedResponseDto.from(creation);
 
         return ResponseEntity.accepted()

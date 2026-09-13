@@ -57,7 +57,7 @@ class ConversionJobControllerTest {
         MockMultipartFile file = docx();
         ConversionJob conversionJob = new ConversionJob("example.docx", "source.docx", "token-hash");
         ReflectionTestUtils.setField(conversionJob, "id", id);
-        when(conversionJobService.create(file, null))
+        when(conversionJobService.create(file, null, null))
                 .thenReturn(new ConversionJobCreation(conversionJob, "download-token"));
 
         mockMvc.perform(multipart("/api/v1/conversions").file(file))
@@ -90,11 +90,12 @@ class ConversionJobControllerTest {
                 75
         );
         ReflectionTestUtils.setField(conversionJob, "id", id);
-        when(conversionJobService.create(file, 75))
+        when(conversionJobService.create(file, ConversionType.IMAGE_TO_WEBP, 75))
                 .thenReturn(new ConversionJobCreation(conversionJob, "download-token"));
 
         mockMvc.perform(multipart("/api/v1/conversions")
                         .file(file)
+                        .param("conversionType", "IMAGE_TO_WEBP")
                         .param("quality", "75"))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.conversionType").value("IMAGE_TO_WEBP"))
@@ -104,7 +105,7 @@ class ConversionJobControllerTest {
     @Test
     void returnsBadRequestForInvalidFile() throws Exception {
         MockMultipartFile file = docx();
-        when(conversionJobService.create(file, null))
+        when(conversionJobService.create(file, null, null))
                 .thenThrow(new IllegalArgumentException("Yalnızca DOCX dosyaları kabul edilir"));
 
         mockMvc.perform(multipart("/api/v1/conversions").file(file))

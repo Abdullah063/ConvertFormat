@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,7 +31,7 @@ class ConversionJobProcessorTest {
 
     @BeforeEach
     void setUp() {
-        when(conversionEngine.supportedType()).thenReturn(ConversionType.DOCX_TO_PDF);
+        when(conversionEngine.supportedTypes()).thenReturn(Set.of(ConversionType.DOCX_TO_PDF));
         conversionJobProcessor = new ConversionJobProcessor(
                 conversionJobRepository,
                 List.of(conversionEngine)

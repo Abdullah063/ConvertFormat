@@ -39,8 +39,16 @@ public class ConversionJobService {
     }
 
     @Transactional
-    public ConversionJobCreation create(MultipartFile file, Integer quality) {
-        ValidatedUpload upload = conversionFileValidator.validate(file, quality);
+    public ConversionJobCreation create(
+            MultipartFile file,
+            ConversionType conversionType,
+            Integer quality
+    ) {
+        ValidatedUpload upload = conversionFileValidator.validate(
+                file,
+                conversionType,
+                quality
+        );
 
         String storageKey = store(file, upload.sourceExtension());
         String originalFileName = extractFileName(file.getOriginalFilename());

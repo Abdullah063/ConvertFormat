@@ -12,7 +12,7 @@ public class OpenApiConfiguration {
     OpenAPI convertFormatOpenApi() {
         return new OpenAPI().info(new Info()
                 .title("ConvertFormat API")
-                .description("DOCX dosyalarını PDF'e, JPEG ve PNG görsellerini WebP'ye dönüştürür.")
+                .description("DOCX, JPEG, PNG ve WebP dosyaları arasında güvenli dönüşüm sağlar.")
                 .version("v1"));
     }
 }

@@ -66,7 +66,7 @@ class ConversionJobServiceTest {
     @Test
     void validatesStoresAndCreatesPendingJob() throws IOException {
         MockMultipartFile file = docx("folder/example.docx");
-        when(conversionFileValidator.validate(file, null)).thenReturn(
+        when(conversionFileValidator.validate(file, null, null)).thenReturn(
                 new ValidatedUpload(ConversionType.DOCX_TO_PDF, ".docx", null)
         );
         when(fileStorage.store(file, ".docx")).thenReturn("generated.docx");
@@ -80,7 +80,7 @@ class ConversionJobServiceTest {
                     return job;
                 });
 
-        ConversionJobCreation creation = conversionJobService.create(file, null);
+        ConversionJobCreation creation = conversionJobService.create(file, null, null);
         ConversionJob result = creation.job();
 
         assertEquals("example.docx", result.getOriginalFileName());
@@ -91,7 +91,7 @@ class ConversionJobServiceTest {
         assertEquals("token-hash", result.getAccessTokenHash());
 
         InOrder order = inOrder(conversionFileValidator, fileStorage, conversionJobRepository);
-        order.verify(conversionFileValidator).validate(file, null);
+        order.verify(conversionFileValidator).validate(file, null, null);
         order.verify(fileStorage).store(file, ".docx");
         order.verify(conversionJobRepository).saveAndFlush(any(ConversionJob.class));
         verify(eventPublisher).publishEvent(new ConversionJobCreatedEvent(id));
@@ -105,7 +105,7 @@ class ConversionJobServiceTest {
                 "image/png",
                 new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47}
         );
-        when(conversionFileValidator.validate(file, 76)).thenReturn(
+        when(conversionFileValidator.validate(file, ConversionType.IMAGE_TO_WEBP, 76)).thenReturn(
                 new ValidatedUpload(ConversionType.IMAGE_TO_WEBP, ".png", 76)
         );
         when(fileStorage.store(file, ".png")).thenReturn("generated.png");
@@ -119,7 +119,11 @@ class ConversionJobServiceTest {
                     return job;
                 });
 
-        ConversionJob result = conversionJobService.create(file, 76).job();
+        ConversionJob result = conversionJobService.create(
+                file,
+                ConversionType.IMAGE_TO_WEBP,
+                76
+        ).job();
 
         assertEquals(ConversionType.IMAGE_TO_WEBP, result.getConversionType());
         assertEquals(76, result.getQuality());
@@ -130,14 +134,14 @@ class ConversionJobServiceTest {
     @Test
     void wrapsStorageFailureAndDoesNotSaveJob() throws IOException {
         MockMultipartFile file = docx("example.docx");
-        when(conversionFileValidator.validate(file, null)).thenReturn(
+        when(conversionFileValidator.validate(file, null, null)).thenReturn(
                 new ValidatedUpload(ConversionType.DOCX_TO_PDF, ".docx", null)
         );
         when(fileStorage.store(file, ".docx")).thenThrow(new IOException("disk full"));
 
         FileStorageException exception = assertThrows(
                 FileStorageException.class,
-                () -> conversionJobService.create(file, null)
+                () -> conversionJobService.create(file, null, null)
         );
 
         assertEquals("Dosya kaydedilemedi", exception.getMessage());
@@ -147,7 +151,7 @@ class ConversionJobServiceTest {
     @Test
     void deletesStoredFileWhenDatabaseSaveFails() throws IOException {
         MockMultipartFile file = docx("example.docx");
-        when(conversionFileValidator.validate(file, null)).thenReturn(
+        when(conversionFileValidator.validate(file, null, null)).thenReturn(
                 new ValidatedUpload(ConversionType.DOCX_TO_PDF, ".docx", null)
         );
         when(fileStorage.store(file, ".docx")).thenReturn("generated.docx");
@@ -156,7 +160,7 @@ class ConversionJobServiceTest {
 
         assertThrows(
                 IllegalStateException.class,
-                () -> conversionJobService.create(file, null)
+                () -> conversionJobService.create(file, null, null)
         );
 
         verify(fileStorage).delete("generated.docx");

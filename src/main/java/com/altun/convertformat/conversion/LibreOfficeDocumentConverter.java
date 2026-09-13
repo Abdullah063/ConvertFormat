@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -29,8 +30,8 @@ public class LibreOfficeDocumentConverter implements ConversionEngine {
     }
 
     @Override
-    public ConversionType supportedType() {
-        return ConversionType.DOCX_TO_PDF;
+    public Set<ConversionType> supportedTypes() {
+        return Set.of(ConversionType.DOCX_TO_PDF);
     }
 
     @Override

@@ -21,18 +21,20 @@
     <section class="hero" aria-labelledby="page-title">
         <p class="eyebrow">Belge · Görsel · Güvenli</p>
         <h1 id="page-title">Dosyanı ihtiyacın olan formata dönüştür.</h1>
-        <p class="hero-copy">DOCX dosyanı PDF’e, JPEG veya PNG görselini WebP’ye çevir. Sonuç yalnızca sana verilen gizli anahtarla indirilebilir.</p>
+        <p class="hero-copy">Belgelerini ve görsellerini PDF, WebP, JPG veya PNG formatına çevir. Sonuç yalnızca sana verilen gizli anahtarla indirilebilir.</p>
     </section>
 
     <section class="converter-card" aria-label="Dosya dönüştürücü">
         <form id="upload-form">
-            <div class="format-switch" role="tablist" aria-label="Dönüşüm türü">
-                <button class="format-option is-active" type="button" role="tab" aria-selected="true" data-mode="document">
-                    DOCX → PDF
-                </button>
-                <button class="format-option" type="button" role="tab" aria-selected="false" data-mode="image">
-                    JPG / PNG → WebP
-                </button>
+            <div class="format-control">
+                <label for="conversion-mode">Dönüşüm türü</label>
+                <select id="conversion-mode" name="conversionMode">
+                    <option value="document">DOCX → PDF</option>
+                    <option value="imageToWebp">JPG / PNG → WebP</option>
+                    <option value="webpToJpeg">WebP → JPG</option>
+                    <option value="webpToPng">WebP → PNG</option>
+                    <option value="imageToPdf">JPG / PNG → PDF</option>
+                </select>
             </div>
 
             <label class="drop-zone" id="drop-zone" for="file-input">
@@ -52,7 +54,7 @@
             </div>
 
             <div class="quality-control" id="quality-control" hidden>
-                <label for="quality">WebP kalitesi</label>
+                <label id="quality-label" for="quality">WebP kalitesi</label>
                 <input id="quality" name="quality" type="range" min="1" max="100" value="82">
                 <output id="quality-value" for="quality">82</output>
             </div>
@@ -78,8 +80,8 @@
     <section class="feature-grid" aria-label="Özellikler">
         <article>
             <span>01</span>
-            <h2>Formatı korur</h2>
-            <p>LibreOffice belgeyi, cwebp ise JPEG ve PNG görsellerini dönüştürür.</p>
+            <h2>Gerçek dönüşüm</h2>
+            <p>LibreOffice, cwebp ve ImageMagick dosyanı gerçek hedef formatta üretir.</p>
         </article>
         <article>
             <span>02</span>
@@ -96,7 +98,7 @@
 
 <footer>
     <span>ConvertFormat</span>
-    <span>Spring Boot · PostgreSQL · LibreOffice · cwebp</span>
+    <span>Spring Boot · PostgreSQL · LibreOffice · cwebp · ImageMagick</span>
 </footer>
 </body>
 </html>
