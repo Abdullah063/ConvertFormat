@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,7 +26,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/conversions")
-@Tag(name = "Conversions", description = "DOCX → PDF dönüşüm işlemleri")
+@Tag(name = "Conversions", description = "Belge ve görsel dönüşüm işlemleri")
 public class ConversionJobController {
 
     private final ConversionJobService conversionJobService;
@@ -38,11 +39,12 @@ public class ConversionJobController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    @Operation(summary = "Yeni bir DOCX → PDF dönüşümü başlatır")
+    @Operation(summary = "Yeni bir DOCX → PDF veya JPEG/PNG → WebP dönüşümü başlatır")
     public ResponseEntity<ConversionJobCreatedResponseDto> create(
-            @RequestPart("file") MultipartFile file
+            @RequestPart("file") MultipartFile file,
+            @RequestParam(required = false) Integer quality
     ) {
-        ConversionJobCreation creation = conversionJobService.create(file);
+        ConversionJobCreation creation = conversionJobService.create(file, quality);
         ConversionJobCreatedResponseDto response = ConversionJobCreatedResponseDto.from(creation);
 
         return ResponseEntity.accepted()
@@ -56,8 +58,8 @@ public class ConversionJobController {
         return ConversionJobResponseDto.from(conversionJobService.findById(id));
     }
 
-    @GetMapping(value = "/{id}/file", produces = MediaType.APPLICATION_PDF_VALUE)
-    @Operation(summary = "Tamamlanan PDF dosyasını gizli anahtarla indirir")
+    @GetMapping(value = "/{id}/file")
+    @Operation(summary = "Tamamlanan dosyayı gizli anahtarla indirir")
     public ResponseEntity<Resource> download(
             @PathVariable UUID id,
             @RequestHeader("X-Download-Token") String downloadToken
@@ -68,7 +70,7 @@ public class ConversionJobController {
                 .build();
 
         return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
+                .contentType(MediaType.parseMediaType(conversionFile.mediaType()))
                 .header("Content-Disposition", contentDisposition.toString())
                 .body(new FileSystemResource(conversionFile.path()));
     }

@@ -30,10 +30,11 @@ class LocalFileStorageTest {
                 "test-content".getBytes()
         );
 
-        String storageKey = storage.store(file);
+        String storageKey = storage.store(file, ".docx");
         Path storedFile = storage.load(storageKey);
 
         assertTrue(Files.exists(storedFile));
+        assertTrue(storageKey.endsWith(".docx"));
         assertEquals("test-content", Files.readString(storedFile));
     }
 

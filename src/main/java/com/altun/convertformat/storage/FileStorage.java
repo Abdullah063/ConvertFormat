@@ -7,9 +7,9 @@ import java.nio.file.Path;
 
 public interface FileStorage {
 
-    public abstract String store(MultipartFile file) throws IOException;
+    String store(MultipartFile file, String extension) throws IOException;
 
-    public abstract Path load(String storageKey);
+    Path load(String storageKey);
 
-    public abstract void delete(String storageKey) throws IOException;
+    void delete(String storageKey) throws IOException;
 }

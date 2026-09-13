@@ -1,6 +1,7 @@
 package com.altun.convertformat.entities;
 
 import com.altun.convertformat.conversion.ConversionStatus;
+import com.altun.convertformat.conversion.ConversionType;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -27,6 +28,12 @@ public class ConversionJob {
     private String accessTokenHash;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private ConversionType conversionType;
+
+    private Integer quality;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ConversionStatus status;
 
@@ -46,14 +53,31 @@ public class ConversionJob {
     public ConversionJob(
             String originalFileName,
             String sourceStorageKey,
+            String accessTokenHash,
+            ConversionType conversionType,
+            Integer quality
+    ) {
+        this.originalFileName = originalFileName;
+        this.sourceStorageKey = sourceStorageKey;
+        this.accessTokenHash = accessTokenHash;
+        this.conversionType = conversionType;
+        this.quality = quality;
+        this.status = ConversionStatus.PENDING;
+        this.createdAt = LocalDateTime.now();
+    }
+
+    public ConversionJob(
+            String originalFileName,
+            String sourceStorageKey,
             String accessTokenHash
     ) {
-        this.originalFileName=originalFileName;
-        this.sourceStorageKey=sourceStorageKey;
-        this.accessTokenHash=accessTokenHash;
-        this.status=ConversionStatus.PENDING;
-        this.createdAt=LocalDateTime.now();
-
+        this(
+                originalFileName,
+                sourceStorageKey,
+                accessTokenHash,
+                ConversionType.DOCX_TO_PDF,
+                null
+        );
     }
 
 
@@ -96,6 +120,14 @@ public class ConversionJob {
 
     public String getAccessTokenHash() {
         return accessTokenHash;
+    }
+
+    public ConversionType getConversionType() {
+        return conversionType;
+    }
+
+    public Integer getQuality() {
+        return quality;
     }
 
     public String getErrorMessage() {

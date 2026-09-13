@@ -28,8 +28,8 @@ public class LocalFileStorage implements FileStorage {
     }
 
     @Override
-    public String store(MultipartFile file) throws IOException {
-        String storageKey = UUID.randomUUID() + ".docx";
+    public String store(MultipartFile file, String extension) throws IOException {
+        String storageKey = UUID.randomUUID() + extension;
         Path target = resolveSafely(storageKey);
 
         try (InputStream inputStream = file.getInputStream()) {

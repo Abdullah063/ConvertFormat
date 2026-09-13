@@ -1,7 +1,7 @@
 package com.altun.convertformat.conversion;
 
-import com.altun.convertformat.storage.FileStorage;
 import com.altun.convertformat.entities.ConversionJob;
+import com.altun.convertformat.storage.FileStorage;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -12,16 +12,16 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 @Component
-public class LibreOfficeDocumentConverter implements ConversionEngine {
+public class CwebpImageConverter implements ConversionEngine {
 
     private final FileStorage fileStorage;
     private final String command;
     private final Duration timeout;
 
-    public LibreOfficeDocumentConverter(
+    public CwebpImageConverter(
             FileStorage fileStorage,
-            @Value("${app.conversion.command:libreoffice}") String command,
-            @Value("${app.conversion.timeout:60s}") Duration timeout
+            @Value("${app.conversion.webp-command:cwebp}") String command,
+            @Value("${app.conversion.webp-timeout:30s}") Duration timeout
     ) {
         this.fileStorage = fileStorage;
         this.command = command;
@@ -30,26 +30,33 @@ public class LibreOfficeDocumentConverter implements ConversionEngine {
 
     @Override
     public ConversionType supportedType() {
-        return ConversionType.DOCX_TO_PDF;
+        return ConversionType.IMAGE_TO_WEBP;
     }
 
     @Override
     public String convert(ConversionJob conversionJob) {
-        String sourceStorageKey = conversionJob.getSourceStorageKey();
-        Path source = fileStorage.load(sourceStorageKey);
-        String resultStorageKey = replaceExtension(sourceStorageKey, ".pdf");
+        Path source = fileStorage.load(conversionJob.getSourceStorageKey());
+        String resultStorageKey = replaceExtension(
+                conversionJob.getSourceStorageKey(),
+                ConversionType.IMAGE_TO_WEBP.getOutputExtension()
+        );
         Path result = fileStorage.load(resultStorageKey);
 
-        ensureSourceExists(source);
+        if (!Files.isRegularFile(source)) {
+            throw new DocumentConversionException("Kaynak görsel bulunamadı");
+        }
 
         ProcessBuilder processBuilder = new ProcessBuilder(
                 command,
-                "--headless",
-                "--convert-to",
-                "pdf",
-                "--outdir",
-                source.getParent().toString(),
-                source.toString()
+                "-quiet",
+                "-mt",
+                "-metadata",
+                "none",
+                "-q",
+                String.valueOf(conversionJob.getQuality()),
+                source.toString(),
+                "-o",
+                result.toString()
         );
         processBuilder.redirectErrorStream(true);
 
@@ -60,28 +67,22 @@ public class LibreOfficeDocumentConverter implements ConversionEngine {
 
             if (!finished) {
                 process.destroyForcibly();
-                throw new DocumentConversionException("Dönüşüm zaman aşımına uğradı");
+                throw new DocumentConversionException("WebP dönüşümü zaman aşımına uğradı");
             }
 
             String output = new String(process.getInputStream().readAllBytes()).trim();
             if (process.exitValue() != 0 || !Files.isRegularFile(result)) {
                 throw new DocumentConversionException(
-                        "LibreOffice dönüşümü başarısız oldu" + formatOutput(output)
+                        "WebP dönüşümü başarısız oldu" + formatOutput(output)
                 );
             }
 
             return resultStorageKey;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new DocumentConversionException("Dönüşüm işlemi kesildi", exception);
+            throw new DocumentConversionException("WebP dönüşümü kesildi", exception);
         } catch (IOException exception) {
-            throw new DocumentConversionException("LibreOffice çalıştırılamadı", exception);
-        }
-    }
-
-    private void ensureSourceExists(Path source) {
-        if (!Files.isRegularFile(source)) {
-            throw new DocumentConversionException("Kaynak dosya bulunamadı");
+            throw new DocumentConversionException("cwebp çalıştırılamadı", exception);
         }
     }
 

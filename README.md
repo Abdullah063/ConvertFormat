@@ -1,13 +1,16 @@
 # ConvertFormat
 
-DOCX belgelerini arka planda PDF'e dönüştüren Spring Boot uygulaması. Proje; dosya yükleme, asenkron işleme, durum sorgulama ve gizli anahtarla indirme akışını gerçek bir LibreOffice işlemi üzerinden çalıştırır.
+DOCX belgelerini PDF'e, JPEG ve PNG görsellerini WebP'ye dönüştüren Spring Boot uygulaması. Proje; dosya yükleme, asenkron işleme, durum sorgulama ve gizli anahtarla indirme akışını gerçek LibreOffice ve cwebp işlemleri üzerinden çalıştırır.
 
 ## Özellikler
 
-- Mobil uyumlu DOCX yükleme arayüzü
-- En fazla 10 MB `.docx` doğrulaması
+- Mobil uyumlu belge ve görsel yükleme arayüzü
+- DOCX → PDF ve JPEG/PNG → WebP dönüşümü
+- WebP için 1–100 arası kalite seçimi
+- Dosya uzantısı yanında DOCX, JPEG ve PNG imza doğrulaması
+- En fazla 10 MB dosya doğrulaması
 - Asenkron dönüşüm ve iş durumu takibi
-- LibreOffice ile gerçek PDF üretimi
+- LibreOffice ile PDF, cwebp ile WebP üretimi
 - SHA-256 özeti veritabanında tutulan tek kullanımlık erişim anahtarı
 - İstemci başına dakikada 10 yükleme sınırı
 - PostgreSQL ve Flyway şema yönetimi
@@ -17,9 +20,9 @@ DOCX belgelerini arka planda PDF'e dönüştüren Spring Boot uygulaması. Proje
 
 ## Çalışma akışı
 
-1. Tarayıcı `POST /api/v1/conversions` isteğiyle DOCX dosyasını gönderir.
+1. Tarayıcı `POST /api/v1/conversions` isteğiyle DOCX, JPEG veya PNG dosyasını gönderir.
 2. Uygulama dosyayı saklar, veritabanında `PENDING` işi oluşturur ve indirme anahtarını yalnızca bu yanıtta döndürür.
-3. Transaction tamamlandıktan sonra asenkron çalışan işlemci LibreOffice'i başlatır.
+3. Transaction tamamlandıktan sonra asenkron çalışan işlemci dönüşüm tipine uygun LibreOffice veya cwebp motorunu seçer.
 4. İş durumu `PROCESSING`, ardından `COMPLETED` veya `FAILED` olur.
 5. Tarayıcı durumu sorgular ve tamamlanan PDF'i `X-Download-Token` başlığıyla indirir.
 
@@ -30,7 +33,7 @@ DOCX belgelerini arka planda PDF'e dönüştüren Spring Boot uygulaması. Proje
 - Spring Web MVC, Spring Data JPA, Spring Security
 - PostgreSQL 17
 - Flyway
-- LibreOffice
+- LibreOffice ve libwebp/cwebp
 - Springdoc OpenAPI
 - Docker ve Docker Compose
 
@@ -73,6 +76,17 @@ Yeni dönüşüm başlatma:
 curl -F file=@belge.docx http://127.0.0.1:8081/api/v1/conversions
 ```
 
+Görseli kalite değeriyle WebP'ye dönüştürme:
+
+```bash
+curl \
+  -F file=@gorsel.png \
+  -F quality=82 \
+  http://127.0.0.1:8081/api/v1/conversions
+```
+
+`quality` değeri `1–100` arasındadır ve görseller için gönderilmezse `82` kullanılır. Dönüşüm türü dosya uzantısı ve dosya imzasından belirlenir.
+
 Yanıttaki `id` iş durumunu sorgulamak, `downloadToken` ise PDF'i indirmek için kullanılır. Ham anahtar daha sonra sunucudan tekrar alınamaz.
 
 ```bash
@@ -86,7 +100,7 @@ curl \
 
 ## Yerel geliştirme
 
-Uygulamayı Docker dışında çalıştıracaksan bilgisayarında Java 21, PostgreSQL ve `libreoffice` komutu bulunmalıdır.
+Uygulamayı Docker dışında çalıştıracaksan bilgisayarında Java 21, PostgreSQL, `libreoffice` ve `cwebp` komutları bulunmalıdır.
 
 ```bash
 docker compose up -d postgres
@@ -114,7 +128,8 @@ Veritabanı tabloları Hibernate tarafından otomatik değiştirilmez. Şema `sr
 - **Constructor injection:** Bağımlılıkları zorunlu ve değiştirilemez hâle getirir; sınıfı testlerde kolay kurmayı sağlar.
 - **DTO kullanımı:** Entity'yi doğrudan API'ye açmaz; dış sözleşmeyi veritabanı modelinden ayırır.
 - **Transaction sonrası event:** Veritabanına yazma başarısızsa dönüşümün boşuna başlamasını engeller.
-- **Asenkron işlem:** Uzun süren LibreOffice işlemi HTTP isteğini bekletmez; istemci durumu ayrı uçtan izler.
+- **Asenkron işlem:** Dönüşüm motorunun çalışması HTTP isteğini bekletmez; istemci durumu ayrı uçtan izler.
+- **Strategy yaklaşımı:** İşlemci dönüşüm tipine göre uygun motoru seçer; yeni formatlar ana akışı büyütmeden eklenebilir.
 - **Flyway:** Şema değişikliklerini sıralı, tekrar üretilebilir ve kodla birlikte sürümlenebilir tutar.
 - **Token hashleme:** Veritabanı sızsa bile ham indirme anahtarı doğrudan ele geçmez.
 - **Portların loopback'e bağlanması:** Uygulama ve veritabanının internete doğrudan açılmasını engeller.

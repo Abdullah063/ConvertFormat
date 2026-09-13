@@ -11,7 +11,7 @@ RUN ./mvnw clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 
-RUN apk add --no-cache libreoffice font-dejavu \
+RUN apk add --no-cache libreoffice font-dejavu libwebp-tools \
     && addgroup -S spring \
     && adduser -S spring -G spring
 

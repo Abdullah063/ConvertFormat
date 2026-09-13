@@ -20,36 +20,38 @@ public class ConversionJobService {
 
     private final ConversionJobRepository conversionJobRepository;
     private final FileStorage fileStorage;
-    private final DocxFileValidator docxFileValidator;
+    private final ConversionFileValidator conversionFileValidator;
     private final ApplicationEventPublisher eventPublisher;
     private final AccessTokenService accessTokenService;
 
     public ConversionJobService(
             ConversionJobRepository conversionJobRepository,
             FileStorage fileStorage,
-            DocxFileValidator docxFileValidator,
+            ConversionFileValidator conversionFileValidator,
             ApplicationEventPublisher eventPublisher,
             AccessTokenService accessTokenService
     ) {
         this.conversionJobRepository = conversionJobRepository;
         this.fileStorage = fileStorage;
-        this.docxFileValidator = docxFileValidator;
+        this.conversionFileValidator = conversionFileValidator;
         this.eventPublisher = eventPublisher;
         this.accessTokenService = accessTokenService;
     }
 
     @Transactional
-    public ConversionJobCreation create(MultipartFile file) {
-        docxFileValidator.validate(file);
+    public ConversionJobCreation create(MultipartFile file, Integer quality) {
+        ValidatedUpload upload = conversionFileValidator.validate(file, quality);
 
-        String storageKey = store(file);
+        String storageKey = store(file, upload.sourceExtension());
         String originalFileName = extractFileName(file.getOriginalFilename());
         String downloadToken = accessTokenService.generate();
         String accessTokenHash = accessTokenService.hash(downloadToken);
         ConversionJob conversionJob = new ConversionJob(
                 originalFileName,
                 storageKey,
-                accessTokenHash
+                accessTokenHash,
+                upload.conversionType(),
+                upload.quality()
         );
 
         try {
@@ -86,15 +88,20 @@ public class ConversionJobService {
             throw new FileStorageException("Dönüştürülen dosya bulunamadı");
         }
 
+        ConversionType conversionType = conversionJob.getConversionType();
         return new ConversionFile(
                 result,
-                replaceExtension(conversionJob.getOriginalFileName(), ".pdf")
+                replaceExtension(
+                        conversionJob.getOriginalFileName(),
+                        conversionType.getOutputExtension()
+                ),
+                conversionType.getOutputMediaType()
         );
     }
 
-    private String store(MultipartFile file) {
+    private String store(MultipartFile file, String extension) {
         try {
-            return fileStorage.store(file);
+            return fileStorage.store(file, extension);
         } catch (IOException exception) {
             throw new FileStorageException("Dosya kaydedilemedi", exception);
         }

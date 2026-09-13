@@ -9,6 +9,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,15 +24,16 @@ class ConversionJobProcessorTest {
     private ConversionJobRepository conversionJobRepository;
 
     @Mock
-    private DocumentConverter documentConverter;
+    private ConversionEngine conversionEngine;
 
     private ConversionJobProcessor conversionJobProcessor;
 
     @BeforeEach
     void setUp() {
+        when(conversionEngine.supportedType()).thenReturn(ConversionType.DOCX_TO_PDF);
         conversionJobProcessor = new ConversionJobProcessor(
                 conversionJobRepository,
-                documentConverter
+                List.of(conversionEngine)
         );
     }
 
@@ -41,7 +43,7 @@ class ConversionJobProcessorTest {
         ConversionJob job = new ConversionJob("example.docx", "source.docx", "token-hash");
         when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
         when(conversionJobRepository.saveAndFlush(job)).thenReturn(job);
-        when(documentConverter.convertToPdf("source.docx")).thenReturn("source.pdf");
+        when(conversionEngine.convert(job)).thenReturn("source.pdf");
 
         conversionJobProcessor.process(new ConversionJobCreatedEvent(id));
 
@@ -56,13 +58,13 @@ class ConversionJobProcessorTest {
         ConversionJob job = new ConversionJob("example.docx", "source.docx", "token-hash");
         when(conversionJobRepository.findById(id)).thenReturn(Optional.of(job));
         when(conversionJobRepository.saveAndFlush(job)).thenReturn(job);
-        when(documentConverter.convertToPdf("source.docx"))
+        when(conversionEngine.convert(job))
                 .thenThrow(new DocumentConversionException("LibreOffice çalıştırılamadı"));
 
         conversionJobProcessor.process(new ConversionJobCreatedEvent(id));
 
         assertEquals(ConversionStatus.FAILED, job.getStatus());
-        assertEquals("Dosya PDF formatına dönüştürülemedi", job.getErrorMessage());
+        assertEquals("Dosya dönüştürülemedi", job.getErrorMessage());
         verify(conversionJobRepository).save(job);
     }
 
@@ -73,6 +75,6 @@ class ConversionJobProcessorTest {
 
         conversionJobProcessor.process(new ConversionJobCreatedEvent(id));
 
-        verify(documentConverter, never()).convertToPdf("source.docx");
+        verify(conversionEngine, never()).convert(org.mockito.ArgumentMatchers.any());
     }
 }

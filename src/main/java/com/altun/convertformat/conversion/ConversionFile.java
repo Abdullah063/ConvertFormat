@@ -2,5 +2,5 @@ package com.altun.convertformat.conversion;
 
 import java.nio.file.Path;
 
-public record ConversionFile(Path path, String downloadFileName) {
+public record ConversionFile(Path path, String downloadFileName, String mediaType) {
 }

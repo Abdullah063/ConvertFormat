@@ -57,7 +57,7 @@ class ConversionJobControllerTest {
         MockMultipartFile file = docx();
         ConversionJob conversionJob = new ConversionJob("example.docx", "source.docx", "token-hash");
         ReflectionTestUtils.setField(conversionJob, "id", id);
-        when(conversionJobService.create(file))
+        when(conversionJobService.create(file, null))
                 .thenReturn(new ConversionJobCreation(conversionJob, "download-token"));
 
         mockMvc.perform(multipart("/api/v1/conversions").file(file))
@@ -68,14 +68,43 @@ class ConversionJobControllerTest {
                 ))
                 .andExpect(jsonPath("$.id").value(id.toString()))
                 .andExpect(jsonPath("$.originalFileName").value("example.docx"))
+                .andExpect(jsonPath("$.conversionType").value("DOCX_TO_PDF"))
                 .andExpect(jsonPath("$.status").value("PENDING"))
                 .andExpect(jsonPath("$.downloadToken").value("download-token"));
     }
 
     @Test
+    void acceptsImageQualityAndReturnsWebpJob() throws Exception {
+        UUID id = UUID.fromString("4b38546a-a2d3-4396-a74b-63e45863a48a");
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "photo.png",
+                "image/png",
+                new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47}
+        );
+        ConversionJob conversionJob = new ConversionJob(
+                "photo.png",
+                "source.png",
+                "token-hash",
+                ConversionType.IMAGE_TO_WEBP,
+                75
+        );
+        ReflectionTestUtils.setField(conversionJob, "id", id);
+        when(conversionJobService.create(file, 75))
+                .thenReturn(new ConversionJobCreation(conversionJob, "download-token"));
+
+        mockMvc.perform(multipart("/api/v1/conversions")
+                        .file(file)
+                        .param("quality", "75"))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.conversionType").value("IMAGE_TO_WEBP"))
+                .andExpect(jsonPath("$.quality").value(75));
+    }
+
+    @Test
     void returnsBadRequestForInvalidFile() throws Exception {
         MockMultipartFile file = docx();
-        when(conversionJobService.create(file))
+        when(conversionJobService.create(file, null))
                 .thenThrow(new IllegalArgumentException("Yalnızca DOCX dosyaları kabul edilir"));
 
         mockMvc.perform(multipart("/api/v1/conversions").file(file))
@@ -125,7 +154,7 @@ class ConversionJobControllerTest {
         UUID id = UUID.fromString("f89a019d-fce5-4b1f-8d63-d58fb3c79130");
         Path pdf = Files.writeString(tempDirectory.resolve("result.pdf"), "pdf-content");
         when(conversionJobService.loadResult(id, "download-token"))
-                .thenReturn(new ConversionFile(pdf, "example.pdf"));
+                .thenReturn(new ConversionFile(pdf, "example.pdf", "application/pdf"));
 
         mockMvc.perform(get("/api/v1/conversions/{id}/file", id)
                         .header("X-Download-Token", "download-token"))
@@ -136,6 +165,20 @@ class ConversionJobControllerTest {
                 ))
                 .andExpect(content().contentType(MediaType.APPLICATION_PDF))
                 .andExpect(content().string("pdf-content"));
+    }
+
+    @Test
+    void downloadsCompletedWebpWithCorrectContentType() throws Exception {
+        UUID id = UUID.fromString("4b38546a-a2d3-4396-a74b-63e45863a48a");
+        Path webp = Files.writeString(tempDirectory.resolve("result.webp"), "webp-content");
+        when(conversionJobService.loadResult(id, "download-token"))
+                .thenReturn(new ConversionFile(webp, "photo.webp", "image/webp"));
+
+        mockMvc.perform(get("/api/v1/conversions/{id}/file", id)
+                        .header("X-Download-Token", "download-token"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/webp"))
+                .andExpect(content().string("webp-content"));
     }
 
     @Test
