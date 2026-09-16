@@ -334,6 +334,33 @@ h1 span {
     font-weight: 700;
 }
 
+.quick-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 10px;
+}
+
+.quick-modes button {
+    min-height: 34px;
+    padding: 0 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink-soft);
+    background: var(--surface-soft);
+    font-size: 12px;
+    font-weight: 680;
+    cursor: pointer;
+    transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.quick-modes button:hover,
+.quick-modes button.is-active {
+    color: var(--primary);
+    border-color: #b2c4fa;
+    background: var(--primary-soft);
+}
+
 .select-wrap {
     position: relative;
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="DOCX, PDF, WebP, JPEG ve PNG dosyalarınızı güvenle dönüştürün.">
+    <meta name="description" content="Word, PowerPoint, Excel, PDF, WebP, JPEG ve PNG dosyalarınızı güvenle dönüştürün.">
     <title>ConvertFormat — Hızlı ve güvenli dosya dönüştürme</title>
     <link rel="stylesheet" href="/css/app.css">
     <script src="/js/app.js" defer></script>
@@ -29,10 +29,12 @@
         <section class="hero" aria-labelledby="page-title">
             <div class="service-badge"><span aria-hidden="true"></span> Dönüştürme servisi hazır</div>
             <h1 id="page-title">Dosyan hazır.<br><span>Formatı değil.</span></h1>
-            <p class="hero-copy">Belge ve görsellerini birkaç saniyede ihtiyacın olan formata dönüştür. Üyelik yok, karmaşa yok.</p>
+            <p class="hero-copy">Belgelerini, sunumlarını, tablolarını ve görsellerini birkaç saniyede ihtiyacın olan formata dönüştür. Üyelik yok, karmaşa yok.</p>
 
             <div class="format-list" aria-label="Desteklenen formatlar">
                 <span>DOCX</span>
+                <span>PPTX</span>
+                <span>XLSX</span>
                 <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12m-4-4 4 4-4 4"/></svg>
                 <span>PDF</span>
                 <span class="format-divider"></span>
@@ -63,13 +65,26 @@
             <form id="upload-form">
                 <div class="format-control">
                     <label for="conversion-mode">Dönüşüm türü</label>
+                    <div class="quick-modes" aria-label="Popüler dönüşümler">
+                        <button class="is-active" type="button" data-mode="document" aria-pressed="true">Word → PDF</button>
+                        <button type="button" data-mode="imageToPdf" aria-pressed="false">Görsel → PDF</button>
+                        <button type="button" data-mode="pngToJpeg" aria-pressed="false">PNG → JPG</button>
+                    </div>
                     <div class="select-wrap">
                         <select id="conversion-mode" name="conversionMode">
-                            <option value="document">DOCX → PDF</option>
-                            <option value="imageToWebp">JPG / PNG → WebP</option>
-                            <option value="webpToJpeg">WebP → JPG</option>
-                            <option value="webpToPng">WebP → PNG</option>
-                            <option value="imageToPdf">JPG / PNG → PDF</option>
+                            <optgroup label="Belgeler">
+                                <option value="document">Word (DOCX) → PDF</option>
+                                <option value="pptxToPdf">PowerPoint (PPTX) → PDF</option>
+                                <option value="xlsxToPdf">Excel (XLSX) → PDF</option>
+                            </optgroup>
+                            <optgroup label="Görseller">
+                                <option value="imageToPdf">JPG / PNG → PDF</option>
+                                <option value="imageToWebp">JPG / PNG → WebP</option>
+                                <option value="pngToJpeg">PNG → JPG</option>
+                                <option value="jpegToPng">JPG → PNG</option>
+                                <option value="webpToJpeg">WebP → JPG</option>
+                                <option value="webpToPng">WebP → PNG</option>
+                            </optgroup>
                         </select>
                     </div>
                 </div>

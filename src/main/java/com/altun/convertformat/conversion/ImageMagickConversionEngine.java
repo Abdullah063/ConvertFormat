@@ -20,6 +20,8 @@ public class ImageMagickConversionEngine implements ConversionEngine {
     private static final Set<ConversionType> SUPPORTED_TYPES = Set.of(
             ConversionType.WEBP_TO_JPEG,
             ConversionType.WEBP_TO_PNG,
+            ConversionType.PNG_TO_JPEG,
+            ConversionType.JPEG_TO_PNG,
             ConversionType.IMAGE_TO_PDF
     );
 
@@ -99,7 +101,8 @@ public class ImageMagickConversionEngine implements ConversionEngine {
                 "-strip"
         ));
 
-        if (conversionJob.getConversionType() == ConversionType.WEBP_TO_JPEG) {
+        if (conversionJob.getConversionType() == ConversionType.WEBP_TO_JPEG
+                || conversionJob.getConversionType() == ConversionType.PNG_TO_JPEG) {
             arguments.add("-quality");
             arguments.add(String.valueOf(conversionJob.getQuality()));
         }
@@ -114,8 +117,8 @@ public class ImageMagickConversionEngine implements ConversionEngine {
 
     private String outputArgument(ConversionType conversionType, Path result) {
         return switch (conversionType) {
-            case WEBP_TO_JPEG -> "jpeg:" + result;
-            case WEBP_TO_PNG -> "png:" + result;
+            case WEBP_TO_JPEG, PNG_TO_JPEG -> "jpeg:" + result;
+            case WEBP_TO_PNG, JPEG_TO_PNG -> "png:" + result;
             case IMAGE_TO_PDF -> "pdf:" + result;
             default -> throw new DocumentConversionException(
                     "ImageMagick bu dönüşüm tipini desteklemiyor: " + conversionType
@@ -135,8 +138,11 @@ public class ImageMagickConversionEngine implements ConversionEngine {
         }
 
         return switch (conversionType) {
-            case WEBP_TO_JPEG -> startsWith(signature, new byte[]{(byte) 0xff, (byte) 0xd8});
-            case WEBP_TO_PNG -> startsWith(
+            case WEBP_TO_JPEG, PNG_TO_JPEG -> startsWith(
+                    signature,
+                    new byte[]{(byte) 0xff, (byte) 0xd8}
+            );
+            case WEBP_TO_PNG, JPEG_TO_PNG -> startsWith(
                     signature,
                     new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a}
             );

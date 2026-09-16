@@ -6,10 +6,14 @@ DOCX belgelerini ve görselleri farklı formatlara dönüştüren Spring Boot uy
 
 - Mobil uyumlu belge ve görsel yükleme arayüzü
 - DOCX → PDF
+- PPTX → PDF
+- XLSX → PDF
 - JPEG/PNG → WebP veya PDF
 - WebP → JPEG veya PNG
+- PNG → JPEG
+- JPEG → PNG
 - WebP ve JPEG çıktıları için 1–100 arası kalite seçimi
-- Dosya uzantısı yanında DOCX, JPEG, PNG ve WebP imza doğrulaması
+- Dosya uzantısı yanında Office, JPEG, PNG ve WebP imza doğrulaması
 - En fazla 10 MB dosya doğrulaması
 - Asenkron dönüşüm ve iş durumu takibi
 - LibreOffice, cwebp ve ImageMagick ile gerçek format dönüşümü
@@ -104,9 +108,9 @@ curl -F file=@gorsel.jpg -F conversionType=IMAGE_TO_PDF \
   http://127.0.0.1:8081/api/v1/conversions
 ```
 
-Desteklenen `conversionType` değerleri: `DOCX_TO_PDF`, `IMAGE_TO_WEBP`, `WEBP_TO_JPEG`, `WEBP_TO_PNG` ve `IMAGE_TO_PDF`.
+Desteklenen `conversionType` değerleri: `DOCX_TO_PDF`, `PPTX_TO_PDF`, `XLSX_TO_PDF`, `IMAGE_TO_WEBP`, `WEBP_TO_JPEG`, `WEBP_TO_PNG`, `PNG_TO_JPEG`, `JPEG_TO_PNG` ve `IMAGE_TO_PDF`.
 
-`quality` değeri `1–100` arasındadır. `IMAGE_TO_WEBP` için varsayılan `82`, `WEBP_TO_JPEG` için varsayılan `90` kullanılır. Arayüz dönüşüm türünü her zaman açıkça gönderir. Geriye dönük uyumluluk amacıyla tür gönderilmezse DOCX dosyası PDF'e, JPEG/PNG dosyası WebP'ye dönüştürülür; WebP dosyalarında hedef tür zorunludur.
+`quality` değeri `1–100` arasındadır. `IMAGE_TO_WEBP` için varsayılan `82`; `WEBP_TO_JPEG` ve `PNG_TO_JPEG` için varsayılan `90` kullanılır. Arayüz dönüşüm türünü her zaman açıkça gönderir. Geriye dönük uyumluluk amacıyla tür gönderilmezse DOCX dosyası PDF'e, JPEG/PNG dosyası WebP'ye dönüştürülür; diğer dosyalarda hedef tür zorunludur.
 
 Yanıttaki `id` iş durumunu sorgulamak, `downloadToken` ise çıktıyı indirmek için kullanılır. Ham anahtar daha sonra sunucudan tekrar alınamaz.
 

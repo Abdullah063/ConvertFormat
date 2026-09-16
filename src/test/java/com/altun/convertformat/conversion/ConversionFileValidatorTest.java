@@ -25,6 +25,32 @@ class ConversionFileValidatorTest {
     }
 
     @Test
+    void acceptsPptxToPdf() {
+        ValidatedUpload upload = validator.validate(
+                file("presentation.pptx", bytes(0x50, 0x4b, 0x03, 0x04)),
+                ConversionType.PPTX_TO_PDF,
+                null
+        );
+
+        assertEquals(ConversionType.PPTX_TO_PDF, upload.conversionType());
+        assertEquals(".pptx", upload.sourceExtension());
+        assertNull(upload.quality());
+    }
+
+    @Test
+    void acceptsXlsxToPdf() {
+        ValidatedUpload upload = validator.validate(
+                file("workbook.xlsx", bytes(0x50, 0x4b, 0x03, 0x04)),
+                ConversionType.XLSX_TO_PDF,
+                null
+        );
+
+        assertEquals(ConversionType.XLSX_TO_PDF, upload.conversionType());
+        assertEquals(".xlsx", upload.sourceExtension());
+        assertNull(upload.quality());
+    }
+
+    @Test
     void acceptsJpegWithRequestedQuality() {
         ValidatedUpload upload = validator.validate(
                 file("photo.jpeg", bytes(0xff, 0xd8, 0xff, 0xe0)),
@@ -85,6 +111,44 @@ class ConversionFileValidatorTest {
 
         assertEquals(ConversionType.IMAGE_TO_PDF, upload.conversionType());
         assertNull(upload.quality());
+    }
+
+    @Test
+    void acceptsPngToJpegWithDefaultQuality() {
+        ValidatedUpload upload = validator.validate(
+                file("image.png", bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)),
+                ConversionType.PNG_TO_JPEG,
+                null
+        );
+
+        assertEquals(ConversionType.PNG_TO_JPEG, upload.conversionType());
+        assertEquals(".png", upload.sourceExtension());
+        assertEquals(90, upload.quality());
+    }
+
+    @Test
+    void acceptsJpegToPngWithoutQuality() {
+        ValidatedUpload upload = validator.validate(
+                file("photo.jpeg", bytes(0xff, 0xd8, 0xff)),
+                ConversionType.JPEG_TO_PNG,
+                40
+        );
+
+        assertEquals(ConversionType.JPEG_TO_PNG, upload.conversionType());
+        assertEquals(".jpeg", upload.sourceExtension());
+        assertNull(upload.quality());
+    }
+
+    @Test
+    void rejectsOfficeExtensionThatDoesNotMatchRequestedType() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> validator.validate(
+                        file("presentation.pptx", bytes(0x50, 0x4b, 0x03, 0x04)),
+                        ConversionType.XLSX_TO_PDF,
+                        null
+                )
+        );
     }
 
     @Test

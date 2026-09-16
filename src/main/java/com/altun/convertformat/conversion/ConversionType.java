@@ -2,9 +2,13 @@ package com.altun.convertformat.conversion;
 
 public enum ConversionType {
     DOCX_TO_PDF(".pdf", "application/pdf"),
+    PPTX_TO_PDF(".pdf", "application/pdf"),
+    XLSX_TO_PDF(".pdf", "application/pdf"),
     IMAGE_TO_WEBP(".webp", "image/webp"),
     WEBP_TO_JPEG(".jpg", "image/jpeg"),
     WEBP_TO_PNG(".png", "image/png"),
+    PNG_TO_JPEG(".jpg", "image/jpeg"),
+    JPEG_TO_PNG(".png", "image/png"),
     IMAGE_TO_PDF(".pdf", "application/pdf");
 
     private final String outputExtension;

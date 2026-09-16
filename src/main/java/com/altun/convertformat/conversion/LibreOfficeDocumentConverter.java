@@ -15,6 +15,12 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class LibreOfficeDocumentConverter implements ConversionEngine {
 
+    private static final Set<ConversionType> SUPPORTED_TYPES = Set.of(
+            ConversionType.DOCX_TO_PDF,
+            ConversionType.PPTX_TO_PDF,
+            ConversionType.XLSX_TO_PDF
+    );
+
     private final FileStorage fileStorage;
     private final String command;
     private final Duration timeout;
@@ -31,7 +37,7 @@ public class LibreOfficeDocumentConverter implements ConversionEngine {
 
     @Override
     public Set<ConversionType> supportedTypes() {
-        return Set.of(ConversionType.DOCX_TO_PDF);
+        return SUPPORTED_TYPES;
     }
 
     @Override

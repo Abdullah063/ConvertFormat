@@ -12,6 +12,28 @@ const MODES = {
         readyTitle: "PDF’in hazır",
         downloadTitle: "PDF’i indir"
     },
+    pptxToPdf: {
+        conversionType: "PPTX_TO_PDF",
+        accept: ".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        extensions: [".pptx"],
+        invalidMessage: "Lütfen .pptx uzantılı bir PowerPoint sunumu seç.",
+        dropTitle: "PPTX sunumunu buraya bırak",
+        submitTitle: "PDF’e dönüştür",
+        outputExtension: ".pdf",
+        readyTitle: "PDF’in hazır",
+        downloadTitle: "PDF’i indir"
+    },
+    xlsxToPdf: {
+        conversionType: "XLSX_TO_PDF",
+        accept: ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        extensions: [".xlsx"],
+        invalidMessage: "Lütfen .xlsx uzantılı bir Excel çalışma kitabı seç.",
+        dropTitle: "XLSX çalışma kitabını buraya bırak",
+        submitTitle: "PDF’e dönüştür",
+        outputExtension: ".pdf",
+        readyTitle: "PDF’in hazır",
+        downloadTitle: "PDF’i indir"
+    },
     imageToWebp: {
         conversionType: "IMAGE_TO_WEBP",
         accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
@@ -49,6 +71,30 @@ const MODES = {
         readyTitle: "PNG görselin hazır",
         downloadTitle: "PNG’yi indir"
     },
+    pngToJpeg: {
+        conversionType: "PNG_TO_JPEG",
+        accept: ".png,image/png",
+        extensions: [".png"],
+        invalidMessage: "Lütfen .png uzantılı bir görsel seç.",
+        dropTitle: "PNG görselini buraya bırak",
+        submitTitle: "JPG’ye dönüştür",
+        outputExtension: ".jpg",
+        readyTitle: "JPG görselin hazır",
+        downloadTitle: "JPG’yi indir",
+        qualityLabel: "JPG kalitesi",
+        defaultQuality: 90
+    },
+    jpegToPng: {
+        conversionType: "JPEG_TO_PNG",
+        accept: ".jpg,.jpeg,image/jpeg",
+        extensions: [".jpg", ".jpeg"],
+        invalidMessage: "Lütfen .jpg veya .jpeg uzantılı bir görsel seç.",
+        dropTitle: "JPG görselini buraya bırak",
+        submitTitle: "PNG’ye dönüştür",
+        outputExtension: ".png",
+        readyTitle: "PNG görselin hazır",
+        downloadTitle: "PNG’yi indir"
+    },
     imageToPdf: {
         conversionType: "IMAGE_TO_PDF",
         accept: ".jpg,.jpeg,.png,image/jpeg,image/png",
@@ -71,6 +117,7 @@ const fileSize = document.querySelector("#file-size");
 const removeFileButton = document.querySelector("#remove-file");
 const submitButton = document.querySelector("#submit-button");
 const modeSelect = document.querySelector("#conversion-mode");
+const quickModeButtons = document.querySelectorAll("[data-mode]");
 const dropTitle = document.querySelector("#drop-title");
 const qualityControl = document.querySelector("#quality-control");
 const qualityInput = document.querySelector("#quality");
@@ -90,6 +137,9 @@ let activeMode = "document";
 
 fileInput.addEventListener("change", () => selectFile(fileInput.files[0]));
 modeSelect.addEventListener("change", () => switchMode(modeSelect.value));
+quickModeButtons.forEach((button) => {
+    button.addEventListener("click", () => switchMode(button.dataset.mode));
+});
 qualityInput.addEventListener("input", () => qualityValue.textContent = qualityInput.value);
 removeFileButton.addEventListener("click", resetSelection);
 newConversionButton.addEventListener("click", resetAll);
@@ -113,6 +163,7 @@ form.addEventListener("submit", startConversion);
 dropZone.addEventListener("drop", (event) => selectFile(event.dataTransfer.files[0]));
 
 if (activeJob) {
+    form.hidden = true;
     showProcessing("Dönüşüm kontrol ediliyor", activeJob.originalFileName);
     pollStatus();
 }
@@ -150,6 +201,12 @@ function switchMode(modeName) {
     activeMode = modeName;
     const mode = MODES[activeMode];
 
+    modeSelect.value = activeMode;
+    quickModeButtons.forEach((button) => {
+        const isActive = button.dataset.mode === activeMode;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+    });
     fileInput.accept = mode.accept;
     dropTitle.textContent = mode.dropTitle;
     submitButton.textContent = mode.submitTitle;

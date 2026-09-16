@@ -14,7 +14,7 @@ public class ConversionFileValidator {
     static final int DEFAULT_WEBP_QUALITY = 82;
     static final int DEFAULT_JPEG_QUALITY = 90;
 
-    private static final byte[] DOCX_SIGNATURE = {0x50, 0x4b, 0x03, 0x04};
+    private static final byte[] ZIP_SIGNATURE = {0x50, 0x4b, 0x03, 0x04};
     private static final byte[] JPEG_SIGNATURE = {(byte) 0xff, (byte) 0xd8, (byte) 0xff};
     private static final byte[] PNG_SIGNATURE = {
             (byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
@@ -37,6 +37,18 @@ public class ConversionFileValidator {
 
         return switch (conversionType) {
             case DOCX_TO_PDF -> validateDocx(extension, signature);
+            case PPTX_TO_PDF -> validateOfficeDocument(
+                    extension,
+                    ".pptx",
+                    signature,
+                    ConversionType.PPTX_TO_PDF
+            );
+            case XLSX_TO_PDF -> validateOfficeDocument(
+                    extension,
+                    ".xlsx",
+                    signature,
+                    ConversionType.XLSX_TO_PDF
+            );
             case IMAGE_TO_WEBP -> validateJpegOrPng(
                     extension,
                     signature,
@@ -65,6 +77,17 @@ public class ConversionFileValidator {
                     0,
                     ConversionType.WEBP_TO_PNG
             );
+            case PNG_TO_JPEG -> validatePng(
+                    extension,
+                    signature,
+                    requestedQuality,
+                    ConversionType.PNG_TO_JPEG
+            );
+            case JPEG_TO_PNG -> validateJpeg(
+                    extension,
+                    signature,
+                    ConversionType.JPEG_TO_PNG
+            );
         };
     }
 
@@ -79,11 +102,25 @@ public class ConversionFileValidator {
     }
 
     private ValidatedUpload validateDocx(String extension, byte[] signature) {
-        if (!extension.equals(".docx") || !startsWith(signature, DOCX_SIGNATURE)) {
+        return validateOfficeDocument(
+                extension,
+                ".docx",
+                signature,
+                ConversionType.DOCX_TO_PDF
+        );
+    }
+
+    private ValidatedUpload validateOfficeDocument(
+            String extension,
+            String expectedExtension,
+            byte[] signature,
+            ConversionType conversionType
+    ) {
+        if (!extension.equals(expectedExtension) || !startsWith(signature, ZIP_SIGNATURE)) {
             throw incompatibleFile();
         }
 
-        return new ValidatedUpload(ConversionType.DOCX_TO_PDF, ".docx", null);
+        return new ValidatedUpload(conversionType, expectedExtension, null);
     }
 
     private ValidatedUpload validateJpegOrPng(
@@ -122,6 +159,36 @@ public class ConversionFileValidator {
                 ? null
                 : validateQuality(requestedQuality, defaultQuality);
         return new ValidatedUpload(conversionType, ".webp", quality);
+    }
+
+    private ValidatedUpload validatePng(
+            String extension,
+            byte[] signature,
+            Integer requestedQuality,
+            ConversionType conversionType
+    ) {
+        if (!extension.equals(".png") || !startsWith(signature, PNG_SIGNATURE)) {
+            throw incompatibleFile();
+        }
+
+        return new ValidatedUpload(
+                conversionType,
+                ".png",
+                validateQuality(requestedQuality, DEFAULT_JPEG_QUALITY)
+        );
+    }
+
+    private ValidatedUpload validateJpeg(
+            String extension,
+            byte[] signature,
+            ConversionType conversionType
+    ) {
+        boolean validExtension = extension.equals(".jpg") || extension.equals(".jpeg");
+        if (!validExtension || !startsWith(signature, JPEG_SIGNATURE)) {
+            throw incompatibleFile();
+        }
+
+        return new ValidatedUpload(conversionType, extension, null);
     }
 
     private byte[] readSignature(MultipartFile file) {
